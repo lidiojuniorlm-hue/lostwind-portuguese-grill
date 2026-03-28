@@ -1,0 +1,181 @@
+import { useMemo, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SECTIONS } from "@/types/warehouse";
+import { Euro, TrendingUp, Receipt, Percent, Calendar } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend } from "recharts";
+
+const CHART_COLORS = ["hsl(0,78%,50%)", "hsl(25,95%,53%)", "hsl(40,100%,60%)", "hsl(200,70%,50%)", "hsl(150,60%,45%)"];
+
+export default function Financeiro() {
+  const { orders } = useAuth();
+  const [period, setPeriod] = useState<"7d" | "30d" | "90d" | "all">("30d");
+
+  const filteredOrders = useMemo(() => {
+    if (period === "all") return orders;
+    const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    return orders.filter(o => new Date(o.createdAt) >= cutoff);
+  }, [orders, period]);
+
+  const totals = useMemo(() => {
+    let subtotal = 0, vat = 0;
+    filteredOrders.forEach(o => o.items.forEach(i => {
+      const line = i.unitPrice * i.qty;
+      subtotal += line;
+      vat += line * (i.vatRate / 100);
+    }));
+    return { subtotal, vat, total: subtotal + vat, avgOrder: filteredOrders.length ? (subtotal + vat) / filteredOrders.length : 0 };
+  }, [filteredOrders]);
+
+  // VAT breakdown
+  const vatBreakdown = useMemo(() => {
+    const map: Record<number, { base: number; vat: number }> = {};
+    filteredOrders.forEach(o => o.items.forEach(i => {
+      if (!map[i.vatRate]) map[i.vatRate] = { base: 0, vat: 0 };
+      const line = i.unitPrice * i.qty;
+      map[i.vatRate].base += line;
+      map[i.vatRate].vat += line * (i.vatRate / 100);
+    }));
+    return Object.entries(map).map(([rate, d]) => ({ rate: `${rate}%`, base: d.base, vat: d.vat, total: d.base + d.vat }));
+  }, [filteredOrders]);
+
+  // Revenue by section for pie chart
+  const bySection = useMemo(() => {
+    const map: Record<string, number> = {};
+    SECTIONS.forEach(s => { map[s] = 0; });
+    filteredOrders.forEach(o => o.items.forEach(i => { map[i.section] += i.unitPrice * i.qty * (1 + i.vatRate / 100); }));
+    return Object.entries(map).filter(([, v]) => v > 0).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }));
+  }, [filteredOrders]);
+
+  // Monthly revenue for line chart
+  const monthlyRevenue = useMemo(() => {
+    const map: Record<string, { subtotal: number; vat: number }> = {};
+    filteredOrders.forEach(o => {
+      const d = new Date(o.createdAt);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!map[key]) map[key] = { subtotal: 0, vat: 0 };
+      o.items.forEach(i => {
+        const line = i.unitPrice * i.qty;
+        map[key].subtotal += line;
+        map[key].vat += line * (i.vatRate / 100);
+      });
+    });
+    return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0])).map(([month, d]) => ({
+      month, subtotal: Math.round(d.subtotal * 100) / 100, vat: Math.round(d.vat * 100) / 100, total: Math.round((d.subtotal + d.vat) * 100) / 100,
+    }));
+  }, [filteredOrders]);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-heading text-foreground">Financeiro</h2>
+        <p className="text-sm text-muted-foreground">Resumo financeiro, IVA e faturação</p>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Calendar className="w-4 h-4 text-muted-foreground" />
+        {(["7d", "30d", "90d", "all"] as const).map(p => (
+          <button key={p} onClick={() => setPeriod(p)} className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${period === p ? "bg-primary/20 border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+            {p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : p === "90d" ? "90 dias" : "Tudo"}
+          </button>
+        ))}
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="bg-card border-border"><CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-1"><Euro className="w-4 h-4 text-green-500" /><span className="text-xs text-muted-foreground">Subtotal</span></div>
+          <p className="text-xl font-heading text-foreground">€{totals.subtotal.toFixed(2)}</p>
+        </CardContent></Card>
+        <Card className="bg-card border-border"><CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-1"><Percent className="w-4 h-4 text-yellow-500" /><span className="text-xs text-muted-foreground">IVA Total</span></div>
+          <p className="text-xl font-heading text-foreground">€{totals.vat.toFixed(2)}</p>
+        </CardContent></Card>
+        <Card className="bg-card border-border"><CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-1"><TrendingUp className="w-4 h-4 text-primary" /><span className="text-xs text-muted-foreground">Total c/ IVA</span></div>
+          <p className="text-xl font-heading text-foreground">€{totals.total.toFixed(2)}</p>
+        </CardContent></Card>
+        <Card className="bg-card border-border"><CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-1"><Receipt className="w-4 h-4 text-blue-500" /><span className="text-xs text-muted-foreground">Média/Pedido</span></div>
+          <p className="text-xl font-heading text-foreground">€{totals.avgOrder.toFixed(2)}</p>
+        </CardContent></Card>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Revenue by Section Pie */}
+        <Card className="bg-card border-border">
+          <CardHeader><CardTitle className="text-sm font-heading">Faturação por Secção</CardTitle></CardHeader>
+          <CardContent>
+            {bySection.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">Sem dados</p> : (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie data={bySection} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                    {bySection.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => `€${v.toFixed(2)}`} contentStyle={{ background: "hsl(0,0%,8%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, fontSize: 12, color: "hsl(0,0%,90%)" }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* VAT Breakdown */}
+        <Card className="bg-card border-border">
+          <CardHeader><CardTitle className="text-sm font-heading">Discriminação de IVA</CardTitle></CardHeader>
+          <CardContent>
+            {vatBreakdown.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">Sem dados</p> : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead><tr className="border-b border-border text-muted-foreground">
+                    <th className="text-left py-2 px-2">Taxa</th>
+                    <th className="text-right py-2 px-2">Base Tributável</th>
+                    <th className="text-right py-2 px-2">IVA</th>
+                    <th className="text-right py-2 px-2">Total</th>
+                  </tr></thead>
+                  <tbody>
+                    {vatBreakdown.map(r => (
+                      <tr key={r.rate} className="border-b border-border/50">
+                        <td className="py-2 px-2 text-foreground font-medium">{r.rate}</td>
+                        <td className="py-2 px-2 text-right text-muted-foreground">€{r.base.toFixed(2)}</td>
+                        <td className="py-2 px-2 text-right text-yellow-400">€{r.vat.toFixed(2)}</td>
+                        <td className="py-2 px-2 text-right text-foreground">€{r.total.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    <tr className="font-medium">
+                      <td className="py-2 px-2 text-foreground">Total</td>
+                      <td className="py-2 px-2 text-right text-foreground">€{totals.subtotal.toFixed(2)}</td>
+                      <td className="py-2 px-2 text-right text-yellow-400">€{totals.vat.toFixed(2)}</td>
+                      <td className="py-2 px-2 text-right text-foreground">€{totals.total.toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Monthly Revenue Chart */}
+      {monthlyRevenue.length > 0 && (
+        <Card className="bg-card border-border">
+          <CardHeader><CardTitle className="text-sm font-heading">Evolução Mensal de Faturação</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={monthlyRevenue}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,18%)" />
+                <XAxis dataKey="month" tick={{ fill: "hsl(0,0%,60%)", fontSize: 11 }} />
+                <YAxis tick={{ fill: "hsl(0,0%,60%)", fontSize: 11 }} />
+                <Tooltip contentStyle={{ background: "hsl(0,0%,8%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, fontSize: 12, color: "hsl(0,0%,90%)" }} formatter={(v: number) => `€${v.toFixed(2)}`} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="subtotal" name="Subtotal" fill="hsl(0,78%,50%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="vat" name="IVA" fill="hsl(40,100%,60%)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
