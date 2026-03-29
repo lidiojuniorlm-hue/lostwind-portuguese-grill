@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut, Settings } from "lucide-react";
+import { LayoutDashboard, LogOut, Settings, Package, ShoppingCart, PlusCircle, BarChart3, Truck, Users, Activity, DollarSign, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -24,8 +24,23 @@ export function GestaoSidebar() {
 
   if (!user) return null;
 
-  const mainNav = [
+  const operacoesNav = [
     { title: "Painel", url: "/gestao", icon: LayoutDashboard },
+    { title: "Pedidos", url: "/gestao/pedidos", icon: ShoppingCart },
+    { title: "Novo Pedido", url: "/gestao/novo-pedido", icon: PlusCircle },
+    { title: "Produtos", url: "/gestao/produtos", icon: Package },
+    { title: "Inventário", url: "/gestao/inventario", icon: ClipboardList },
+  ];
+
+  const gestaoNav = [
+    { title: "Fornecedores", url: "/gestao/fornecedores", icon: Truck },
+    { title: "Financeiro", url: "/gestao/financeiro", icon: DollarSign },
+    { title: "Relatórios", url: "/gestao/relatorios", icon: BarChart3 },
+    { title: "Atividade", url: "/gestao/atividade", icon: Activity },
+  ];
+
+  const adminNav = [
+    { title: "Utilizadores", url: "/gestao/utilizadores", icon: Users },
     { title: "Configurações", url: "/gestao/configuracoes", icon: Settings },
   ];
 
