@@ -1,62 +1,54 @@
 import { useState } from "react";
+import { useSuppliers, useSupplierMutations } from "@/hooks/useSupabaseData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Phone, Mail, MapPin } from "lucide-react";
-
-interface Supplier {
-  id: string;
-  name: string;
-  contact: string;
-  email: string;
-  phone: string;
-  address: string;
-  nif: string;
-  category: string;
-  notes: string;
-}
+import { toast } from "sonner";
 
 const CATEGORIES = ["Carnes", "Peixes", "Bebidas", "Secos e Molhados", "Embalagens", "Outros"];
 
-function loadSuppliers(): Supplier[] {
-  try {
-    const s = localStorage.getItem("lw_suppliers");
-    return s ? JSON.parse(s) : [];
-  } catch { return []; }
-}
-
 export default function Fornecedores() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>(loadSuppliers);
+  const { data: suppliers = [] } = useSuppliers();
+  const { addSupplier, updateSupplier, deleteSupplier } = useSupplierMutations();
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Supplier | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", contact: "", email: "", phone: "", address: "", nif: "", category: "Outros", notes: "" });
   const [search, setSearch] = useState("");
 
-  const save = (list: Supplier[]) => { setSuppliers(list); localStorage.setItem("lw_suppliers", JSON.stringify(list)); };
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim()) return;
-    if (editing) {
-      save(suppliers.map(s => s.id === editing.id ? { ...editing, ...form } : s));
-    } else {
-      save([...suppliers, { id: crypto.randomUUID(), ...form }]);
+    try {
+      if (editingId) {
+        await updateSupplier.mutateAsync({ id: editingId, ...form });
+      } else {
+        await addSupplier.mutateAsync(form);
+      }
+      toast.success(editingId ? "Fornecedor atualizado!" : "Fornecedor adicionado!");
+      setForm({ name: "", contact: "", email: "", phone: "", address: "", nif: "", category: "Outros", notes: "" });
+      setEditingId(null);
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message || "Erro");
     }
-    setForm({ name: "", contact: "", email: "", phone: "", address: "", nif: "", category: "Outros", notes: "" });
-    setEditing(null);
-    setOpen(false);
   };
 
-  const handleEdit = (s: Supplier) => {
-    setEditing(s);
-    setForm({ name: s.name, contact: s.contact, email: s.email, phone: s.phone, address: s.address, nif: s.nif, category: s.category, notes: s.notes });
+  const handleEdit = (s: any) => {
+    setEditingId(s.id);
+    setForm({ name: s.name, contact: s.contact || "", email: s.email || "", phone: s.phone || "", address: s.address || "", nif: s.nif || "", category: s.category, notes: s.notes || "" });
     setOpen(true);
   };
 
-  const handleDelete = (id: string) => { if (confirm("Remover fornecedor?")) save(suppliers.filter(s => s.id !== id)); };
+  const handleDelete = async (id: string) => {
+    if (confirm("Remover fornecedor?")) {
+      await deleteSupplier.mutateAsync(id);
+      toast.success("Fornecedor removido");
+    }
+  };
 
-  const filtered = suppliers.filter(s =>
+  const filtered = suppliers.filter((s: any) =>
     s.name.toLowerCase().includes(search.toLowerCase()) || s.category.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -67,12 +59,10 @@ export default function Fornecedores() {
           <h2 className="text-2xl font-heading text-foreground">Fornecedores</h2>
           <p className="text-sm text-muted-foreground">Gestão de fornecedores e contactos</p>
         </div>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditing(null); setForm({ name: "", contact: "", email: "", phone: "", address: "", nif: "", category: "Outros", notes: "" }); } }}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo Fornecedor</Button>
-          </DialogTrigger>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setForm({ name: "", contact: "", email: "", phone: "", address: "", nif: "", category: "Outros", notes: "" }); } }}>
+          <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo Fornecedor</Button></DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>{editing ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editingId ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Nome *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
@@ -90,7 +80,7 @@ export default function Fornecedores() {
               </div>
               <div><Label>Morada</Label><Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
               <div><Label>Notas</Label><Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
-              <Button onClick={handleSave} className="w-full">{editing ? "Guardar" : "Adicionar"}</Button>
+              <Button onClick={handleSave} className="w-full">{editingId ? "Guardar" : "Adicionar"}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -99,7 +89,7 @@ export default function Fornecedores() {
       <Input placeholder="Pesquisar fornecedores..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map(s => (
+        {filtered.map((s: any) => (
           <Card key={s.id} className="bg-card border-border">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">

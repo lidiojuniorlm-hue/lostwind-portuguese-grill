@@ -5,22 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import logo from "@/assets/logo-lostwind.jpeg";
-import { Flame } from "lucide-react";
+import { Flame, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, user } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const { login, user, loading } = useAuth();
   const navigate = useNavigate();
 
-  if (user) {
+  if (!loading && user) {
     navigate("/gestao", { replace: true });
     return null;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(email, password)) {
+    setSubmitting(true);
+    const ok = await login(email, password);
+    setSubmitting(false);
+    if (ok) {
       toast.success("Sessão iniciada!");
       navigate("/gestao");
     } else {
@@ -45,13 +49,11 @@ export default function LoginPage() {
             <label className="text-sm text-muted-foreground block mb-1">Password</label>
             <Input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="••••••" />
           </div>
-          <Button type="submit" className="w-full bg-gradient-flame text-primary-foreground">
-            <Flame className="w-4 h-4 mr-2" /> Entrar
+          <Button type="submit" disabled={submitting} className="w-full bg-gradient-flame text-primary-foreground">
+            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Flame className="w-4 h-4 mr-2" />}
+            Entrar
           </Button>
         </form>
-        <p className="text-[11px] text-muted-foreground/50 text-center mt-4">
-          Demo: admin@lostwind.pt / admin123
-        </p>
       </div>
     </div>
   );
