@@ -1,76 +1,100 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { AppUser, Order, Product } from "@/types/warehouse";
-import { INITIAL_PRODUCTS, INITIAL_USERS } from "@/data/warehouse-data";
+import { supabase } from "@/integrations/supabase/client";
+import { Session, User } from "@supabase/supabase-js";
+
+interface Profile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+}
 
 interface AuthContextType {
-  user: AppUser | null;
-  users: AppUser[];
-  products: Product[];
-  orders: Order[];
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
-  addUser: (user: AppUser) => void;
-  updateUser: (user: AppUser) => void;
-  deleteUser: (id: string) => void;
-  addProduct: (product: Product) => void;
-  updateProduct: (product: Product) => void;
-  deleteProduct: (id: string) => void;
-  addOrder: (order: Order) => void;
-  updateOrderStatus: (orderId: string, status: Order["status"]) => void;
-  updateOrderItems: (orderId: string, items: Order["items"]) => void;
+  session: Session | null;
+  user: User | null;
+  profile: Profile | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ error: string | null }>;
+  register: (email: string, password: string, fullName: string) => Promise<{ error: string | null; needsConfirmation: boolean }>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-function loadFromStorage<T>(key: string, fallback: T): T {
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AppUser | null>(() => loadFromStorage("lw_user", null));
-  const [users, setUsers] = useState<AppUser[]>(() => loadFromStorage("lw_users", INITIAL_USERS));
-  const [products, setProducts] = useState<Product[]>(() => loadFromStorage("lw_products", INITIAL_PRODUCTS));
-  const [orders, setOrders] = useState<Order[]>(() => loadFromStorage("lw_orders", []));
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => { localStorage.setItem("lw_users", JSON.stringify(users)); }, [users]);
-  useEffect(() => { localStorage.setItem("lw_products", JSON.stringify(products)); }, [products]);
-  useEffect(() => { localStorage.setItem("lw_orders", JSON.stringify(orders)); }, [orders]);
-  useEffect(() => {
-    if (user) localStorage.setItem("lw_user", JSON.stringify(user));
-    else localStorage.removeItem("lw_user");
-  }, [user]);
-
-  const login = (email: string, password: string) => {
-    const found = users.find((u) => u.email === email && u.password === password);
-    if (found) { setUser(found); return true; }
-    return false;
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .eq("id", userId)
+      .single();
+    setProfile(data);
   };
 
-  const logout = () => setUser(null);
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          setTimeout(() => fetchProfile(session.user.id), 0);
+        } else {
+          setProfile(null);
+        }
+        setLoading(false);
+      }
+    );
 
-  const addUser = (u: AppUser) => setUsers((prev) => [...prev, u]);
-  const updateUser = (u: AppUser) => setUsers((prev) => prev.map((x) => (x.id === u.id ? u : x)));
-  const deleteUser = (id: string) => setUsers((prev) => prev.filter((x) => x.id !== id));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      }
+      setLoading(false);
+    });
 
-  const addProduct = (p: Product) => setProducts((prev) => [...prev, p]);
-  const updateProduct = (p: Product) => setProducts((prev) => prev.map((x) => (x.id === p.id ? p : x)));
-  const deleteProduct = (id: string) => setProducts((prev) => prev.filter((x) => x.id !== id));
+    return () => subscription.unsubscribe();
+  }, []);
 
-  const addOrder = (o: Order) => setOrders((prev) => [...prev, o]);
-  const updateOrderStatus = (orderId: string, status: Order["status"]) =>
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
-  const updateOrderItems = (orderId: string, items: Order["items"]) =>
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, items } : o)));
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error: error?.message ?? null };
+  };
+
+  const register = async (email: string, password: string, fullName: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName },
+        emailRedirectTo: window.location.origin,
+      },
+    });
+
+    if (error) return { error: error.message, needsConfirmation: false };
+
+    // If user exists but identities is empty, email is already taken
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      return { error: "Este e-mail já está registado.", needsConfirmation: false };
+    }
+
+    // Check if email confirmation is needed
+    const needsConfirmation = !data.session;
+    return { error: null, needsConfirmation };
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setProfile(null);
+  };
 
   return (
-    <AuthContext.Provider
-      value={{ user, users, products, orders, login, logout, addUser, updateUser, deleteUser, addProduct, updateProduct, deleteProduct, addOrder, updateOrderStatus, updateOrderItems }}
-    >
+    <AuthContext.Provider value={{ session, user, profile, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
