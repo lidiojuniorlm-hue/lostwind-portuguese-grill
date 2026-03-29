@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut, Settings } from "lucide-react";
+import { LayoutDashboard, LogOut, Settings, Package, ShoppingCart, PlusCircle, BarChart3, Truck, Users, Activity, DollarSign, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -24,8 +24,23 @@ export function GestaoSidebar() {
 
   if (!user) return null;
 
-  const mainNav = [
+  const operacoesNav = [
     { title: "Painel", url: "/gestao", icon: LayoutDashboard },
+    { title: "Pedidos", url: "/gestao/pedidos", icon: ShoppingCart },
+    { title: "Novo Pedido", url: "/gestao/novo-pedido", icon: PlusCircle },
+    { title: "Produtos", url: "/gestao/produtos", icon: Package },
+    { title: "Inventário", url: "/gestao/inventario", icon: ClipboardList },
+  ];
+
+  const gestaoNav = [
+    { title: "Fornecedores", url: "/gestao/fornecedores", icon: Truck },
+    { title: "Financeiro", url: "/gestao/financeiro", icon: DollarSign },
+    { title: "Relatórios", url: "/gestao/relatorios", icon: BarChart3 },
+    { title: "Atividade", url: "/gestao/atividade", icon: Activity },
+  ];
+
+  const adminNav = [
+    { title: "Utilizadores", url: "/gestao/utilizadores", icon: Users },
     { title: "Configurações", url: "/gestao/configuracoes", icon: Settings },
   ];
 
@@ -46,28 +61,34 @@ export function GestaoSidebar() {
           </SidebarGroupLabel>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNav.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/gestao"}
-                      className="hover:bg-muted/50"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {[
+          { label: "Operações", items: operacoesNav },
+          { label: "Gestão", items: gestaoNav },
+          { label: "Administração", items: adminNav },
+        ].map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/gestao"}
+                        className="hover:bg-muted/50"
+                        activeClassName="bg-primary/10 text-primary font-medium"
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
       <SidebarFooter>
         {!collapsed && (

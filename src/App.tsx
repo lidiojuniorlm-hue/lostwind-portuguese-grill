@@ -10,6 +10,16 @@ import LoginPage from "./pages/gestao/Login.tsx";
 import RegisterPage from "./pages/gestao/Register.tsx";
 import GestaoLayout from "./components/gestao/GestaoLayout.tsx";
 import Dashboard from "./pages/gestao/Dashboard.tsx";
+import Pedidos from "./pages/gestao/Pedidos.tsx";
+import NovoPedido from "./pages/gestao/NovoPedido.tsx";
+import Produtos from "./pages/gestao/Produtos.tsx";
+import Inventario from "./pages/gestao/Inventario.tsx";
+import Fornecedores from "./pages/gestao/Fornecedores.tsx";
+import Financeiro from "./pages/gestao/Financeiro.tsx";
+import Relatorios from "./pages/gestao/Relatorios.tsx";
+import Atividade from "./pages/gestao/Atividade.tsx";
+import Utilizadores from "./pages/gestao/Utilizadores.tsx";
+import Configuracoes from "./pages/gestao/Configuracoes.tsx";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +36,16 @@ const App = () => (
             <Route path="/gestao/register" element={<RegisterPage />} />
             <Route path="/gestao" element={<GestaoLayout />}>
               <Route index element={<Dashboard />} />
+              <Route path="pedidos" element={<Pedidos />} />
+              <Route path="novo-pedido" element={<NovoPedido />} />
+              <Route path="produtos" element={<Produtos />} />
+              <Route path="inventario" element={<Inventario />} />
+              <Route path="fornecedores" element={<Fornecedores />} />
+              <Route path="financeiro" element={<Financeiro />} />
+              <Route path="relatorios" element={<Relatorios />} />
+              <Route path="atividade" element={<Atividade />} />
+              <Route path="utilizadores" element={<Utilizadores />} />
+              <Route path="configuracoes" element={<Configuracoes />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
