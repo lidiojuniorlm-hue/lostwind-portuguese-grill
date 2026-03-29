@@ -3,10 +3,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { GestaoSidebar } from "./GestaoSidebar";
 import logo from "@/assets/logo-lostwind.jpeg";
-import { ROLE_LABELS } from "@/types/warehouse";
+import { Loader2 } from "lucide-react";
 
 export default function GestaoLayout() {
-  const { user } = useAuth();
+  const { user, profile, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!user) return <Navigate to="/gestao/login" replace />;
 
@@ -21,7 +29,9 @@ export default function GestaoLayout() {
               <img src={logo} alt="Lost Wind" className="h-8 w-8 rounded-full border border-border" />
               <div>
                 <h1 className="text-sm font-heading text-foreground leading-tight">Lost Wind — Gestão</h1>
-                <p className="text-[10px] text-muted-foreground">{user.name} · {ROLE_LABELS[user.role]}{user.store ? ` · ${user.store}` : ""}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {profile?.full_name || user.email}
+                </p>
               </div>
             </div>
             <div className="text-[10px] text-muted-foreground hidden md:block">
