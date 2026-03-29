@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSettings, useSettingsMutation } from "@/hooks/useSupabaseData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings, Building2, Truck, FileText, Save, RotateCcw } from "lucide-react";
+import { Settings, Building2, Truck, FileText, Save, RotateCcw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface CompanySettings {
@@ -17,7 +18,6 @@ interface CompanySettings {
   defaultDeliveryTime: string;
   guiaPrefix: string;
   invoicePrefix: string;
-  logoUrl: string;
 }
 
 const DEFAULT_SETTINGS: CompanySettings = {
@@ -30,20 +30,30 @@ const DEFAULT_SETTINGS: CompanySettings = {
   defaultDeliveryTime: "Dia seguinte",
   guiaPrefix: "GT",
   invoicePrefix: "FT",
-  logoUrl: "",
 };
-
-function loadSettings(): CompanySettings {
-  try {
-    const s = localStorage.getItem("lw_settings");
-    return s ? { ...DEFAULT_SETTINGS, ...JSON.parse(s) } : DEFAULT_SETTINGS;
-  } catch { return DEFAULT_SETTINGS; }
-}
 
 export default function Configuracoes() {
   const { user } = useAuth();
-  const [settings, setSettings] = useState<CompanySettings>(loadSettings);
+  const { data: settingsMap, isLoading } = useSettings();
+  const saveSetting = useSettingsMutation();
+  const [settings, setSettings] = useState<CompanySettings>(DEFAULT_SETTINGS);
   const [hasChanges, setHasChanges] = useState(false);
+
+  useEffect(() => {
+    if (settingsMap) {
+      setSettings({
+        companyName: (settingsMap.company_name as any) || DEFAULT_SETTINGS.companyName,
+        nif: (settingsMap.company_nif as any) || DEFAULT_SETTINGS.nif,
+        address: (settingsMap.company_address as any) || DEFAULT_SETTINGS.address,
+        phone: (settingsMap.company_phone as any) || DEFAULT_SETTINGS.phone,
+        email: (settingsMap.company_email as any) || DEFAULT_SETTINGS.email,
+        warehouseAddress: (settingsMap.warehouse_address as any) || DEFAULT_SETTINGS.warehouseAddress,
+        defaultDeliveryTime: (settingsMap.delivery_time as any) || DEFAULT_SETTINGS.defaultDeliveryTime,
+        guiaPrefix: (settingsMap.guia_prefix as any) || DEFAULT_SETTINGS.guiaPrefix,
+        invoicePrefix: (settingsMap.invoice_prefix as any) || DEFAULT_SETTINGS.invoicePrefix,
+      });
+    }
+  }, [settingsMap]);
 
   if (!user || user.role !== "admin") return null;
 
@@ -52,27 +62,33 @@ export default function Configuracoes() {
     setHasChanges(true);
   };
 
-  const handleSave = () => {
-    localStorage.setItem("lw_settings", JSON.stringify(settings));
+  const handleSave = async () => {
+    const pairs: [string, any][] = [
+      ["company_name", settings.companyName],
+      ["company_nif", settings.nif],
+      ["company_address", settings.address],
+      ["company_phone", settings.phone],
+      ["company_email", settings.email],
+      ["warehouse_address", settings.warehouseAddress],
+      ["delivery_time", settings.defaultDeliveryTime],
+      ["guia_prefix", settings.guiaPrefix],
+      ["invoice_prefix", settings.invoicePrefix],
+    ];
+    for (const [key, value] of pairs) {
+      await saveSetting.mutateAsync({ key, value });
+    }
     setHasChanges(false);
     toast.success("Configurações guardadas com sucesso!");
   };
 
   const handleReset = () => {
     setSettings(DEFAULT_SETTINGS);
-    localStorage.removeItem("lw_settings");
-    setHasChanges(false);
-    toast.info("Configurações repostas ao padrão");
+    setHasChanges(true);
   };
 
-  const handleClearData = () => {
-    if (confirm("Tem a certeza que deseja limpar TODOS os dados? Esta ação não pode ser desfeita.")) {
-      localStorage.removeItem("lw_orders");
-      localStorage.removeItem("lw_suppliers");
-      localStorage.removeItem("lw_settings");
-      toast.success("Dados limpos. Recarregue a página para ver as alterações.");
-    }
-  };
+  if (isLoading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -82,22 +98,16 @@ export default function Configuracoes() {
           <p className="text-sm text-muted-foreground font-normal">Definições da empresa e do sistema</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleReset} disabled={!hasChanges}>
-            <RotateCcw className="w-4 h-4 mr-1" /> Repor
-          </Button>
-          <Button size="sm" onClick={handleSave} disabled={!hasChanges}>
-            <Save className="w-4 h-4 mr-1" /> Guardar
+          <Button variant="outline" size="sm" onClick={handleReset} disabled={!hasChanges}><RotateCcw className="w-4 h-4 mr-1" /> Repor</Button>
+          <Button size="sm" onClick={handleSave} disabled={!hasChanges || saveSetting.isPending}>
+            {saveSetting.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />} Guardar
           </Button>
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-sm font-heading tracking-wide flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-primary" /> Dados da Empresa
-            </CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-sm font-heading tracking-wide flex items-center gap-2"><Building2 className="w-4 h-4 text-primary" /> Dados da Empresa</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div><Label className="text-xs">Nome da Empresa</Label><Input value={settings.companyName} onChange={e => update("companyName", e.target.value)} className="text-sm" /></div>
             <div><Label className="text-xs">NIF</Label><Input value={settings.nif} onChange={e => update("nif", e.target.value)} className="text-sm" /></div>
@@ -110,11 +120,7 @@ export default function Configuracoes() {
         </Card>
 
         <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-sm font-heading tracking-wide flex items-center gap-2">
-              <Truck className="w-4 h-4 text-primary" /> Logística
-            </CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-sm font-heading tracking-wide flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /> Logística</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div><Label className="text-xs">Morada do Armazém</Label><Input value={settings.warehouseAddress} onChange={e => update("warehouseAddress", e.target.value)} className="text-sm" /></div>
             <div><Label className="text-xs">Tempo de Entrega Padrão</Label><Input value={settings.defaultDeliveryTime} onChange={e => update("defaultDeliveryTime", e.target.value)} className="text-sm" /></div>
@@ -122,30 +128,12 @@ export default function Configuracoes() {
         </Card>
 
         <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-sm font-heading tracking-wide flex items-center gap-2">
-              <FileText className="w-4 h-4 text-primary" /> Documentos
-            </CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-sm font-heading tracking-wide flex items-center gap-2"><FileText className="w-4 h-4 text-primary" /> Documentos</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">Prefixo Guias de Transporte</Label><Input value={settings.guiaPrefix} onChange={e => update("guiaPrefix", e.target.value)} className="text-sm" /></div>
+              <div><Label className="text-xs">Prefixo Guias</Label><Input value={settings.guiaPrefix} onChange={e => update("guiaPrefix", e.target.value)} className="text-sm" /></div>
               <div><Label className="text-xs">Prefixo Faturas</Label><Input value={settings.invoicePrefix} onChange={e => update("invoicePrefix", e.target.value)} className="text-sm" /></div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border border-destructive/30">
-          <CardHeader>
-            <CardTitle className="text-sm font-heading tracking-wide flex items-center gap-2">
-              <Settings className="w-4 h-4 text-destructive" /> Zona de Perigo
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-xs text-muted-foreground font-normal">Limpar todos os pedidos, fornecedores e configurações. Os produtos e utilizadores serão mantidos.</p>
-            <Button variant="outline" size="sm" onClick={handleClearData} className="text-destructive border-destructive/30 hover:bg-destructive/10">
-              Limpar Todos os Dados
-            </Button>
           </CardContent>
         </Card>
       </div>

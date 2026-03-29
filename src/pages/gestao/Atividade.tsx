@@ -1,41 +1,34 @@
 import { useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useActivityLog, useOrders } from "@/hooks/useSupabaseData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "@/types/warehouse";
-import { Clock, ClipboardList, Package, TrendingUp, ArrowRight } from "lucide-react";
-
-interface ActivityItem {
-  id: string;
-  type: "order_created" | "status_changed";
-  description: string;
-  store: string;
-  date: string;
-  status: string;
-  total: number;
-  itemCount: number;
-}
+import { Clock, ClipboardList, Package, TrendingUp } from "lucide-react";
 
 export default function Atividade() {
-  const { user, orders, users } = useAuth();
+  const { user } = useAuth();
+  const { data: activityLogs = [] } = useActivityLog();
+  const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
 
-  const activities: ActivityItem[] = useMemo(() => {
-    return [...orders]
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .map(o => {
-        const creator = users.find(u => u.id === o.createdBy);
-        const total = o.items.reduce((s, i) => s + i.unitPrice * i.qty * (1 + i.vatRate / 100), 0);
-        return {
-          id: o.id,
-          type: "order_created" as const,
-          description: `Pedido criado por ${creator?.name || "—"} para ${o.storeName}`,
-          store: o.storeName,
-          date: o.createdAt,
-          status: o.status,
-          total,
-          itemCount: o.items.length,
-        };
-      });
-  }, [orders, users]);
+  const activities = useMemo(() => {
+    // Combine activity logs and order-based activities
+    const fromLogs = activityLogs.map((log: any) => ({
+      id: log.id,
+      description: `${log.action}${log.details ? ` — ${log.details}` : ""}`,
+      userName: log.user_name || "Sistema",
+      date: log.created_at,
+    }));
+
+    const fromOrders = orders.map((o: any) => ({
+      id: `order-${o.id}`,
+      description: `Pedido para ${o.store_name} (${(o.items || []).length} itens)`,
+      userName: "",
+      date: o.created_at,
+    }));
+
+    return [...fromLogs, ...fromOrders]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 200);
+  }, [activityLogs, orders]);
 
   const today = new Date().toLocaleDateString("pt-PT");
   const todayCount = activities.filter(a => new Date(a.date).toLocaleDateString("pt-PT") === today).length;
@@ -56,22 +49,10 @@ export default function Atividade() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="bg-card border-border"><CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-1"><Clock className="w-4 h-4 text-primary" /><span className="text-xs text-muted-foreground font-normal">Hoje</span></div>
-          <p className="text-xl font-heading text-foreground">{todayCount}</p>
-        </CardContent></Card>
-        <Card className="bg-card border-border"><CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-1"><ClipboardList className="w-4 h-4 text-blue-400" /><span className="text-xs text-muted-foreground font-normal">Últimos 7 dias</span></div>
-          <p className="text-xl font-heading text-foreground">{last7days}</p>
-        </CardContent></Card>
-        <Card className="bg-card border-border"><CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-1"><Package className="w-4 h-4 text-green-400" /><span className="text-xs text-muted-foreground font-normal">Total Registos</span></div>
-          <p className="text-xl font-heading text-foreground">{activities.length}</p>
-        </CardContent></Card>
-        <Card className="bg-card border-border"><CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-1"><TrendingUp className="w-4 h-4 text-accent" /><span className="text-xs text-muted-foreground font-normal">Valor Total</span></div>
-          <p className="text-xl font-heading text-foreground">€{activities.reduce((s, a) => s + a.total, 0).toFixed(0)}</p>
-        </CardContent></Card>
+        <Card className="bg-card border-border"><CardContent className="p-4"><div className="flex items-center gap-2 mb-1"><Clock className="w-4 h-4 text-primary" /><span className="text-xs text-muted-foreground font-normal">Hoje</span></div><p className="text-xl font-heading text-foreground">{todayCount}</p></CardContent></Card>
+        <Card className="bg-card border-border"><CardContent className="p-4"><div className="flex items-center gap-2 mb-1"><ClipboardList className="w-4 h-4 text-blue-400" /><span className="text-xs text-muted-foreground font-normal">Últimos 7 dias</span></div><p className="text-xl font-heading text-foreground">{last7days}</p></CardContent></Card>
+        <Card className="bg-card border-border"><CardContent className="p-4"><div className="flex items-center gap-2 mb-1"><Package className="w-4 h-4 text-green-400" /><span className="text-xs text-muted-foreground font-normal">Total Registos</span></div><p className="text-xl font-heading text-foreground">{activities.length}</p></CardContent></Card>
+        <Card className="bg-card border-border"><CardContent className="p-4"><div className="flex items-center gap-2 mb-1"><TrendingUp className="w-4 h-4 text-accent" /><span className="text-xs text-muted-foreground font-normal">Pedidos</span></div><p className="text-xl font-heading text-foreground">{orders.length}</p></CardContent></Card>
       </div>
 
       <Card className="bg-card border-border">
@@ -100,16 +81,10 @@ export default function Atividade() {
                         {idx < activities.length - 1 && <div className="w-px h-6 bg-border mt-1" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs text-foreground font-normal">{activity.description}</span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-normal ${ORDER_STATUS_COLORS[activity.status as keyof typeof ORDER_STATUS_COLORS]}`}>
-                            {ORDER_STATUS_LABELS[activity.status as keyof typeof ORDER_STATUS_LABELS]}
-                          </span>
-                        </div>
+                        <span className="text-xs text-foreground font-normal">{activity.description}</span>
                         <div className="flex items-center gap-3 mt-0.5 text-[10px] text-muted-foreground font-normal">
                           <span>{d.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</span>
-                          <span>{activity.itemCount} itens</span>
-                          <span>€{activity.total.toFixed(2)}</span>
+                          {activity.userName && <span>{activity.userName}</span>}
                         </div>
                       </div>
                     </div>

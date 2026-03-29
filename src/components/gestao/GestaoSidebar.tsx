@@ -15,28 +15,36 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { ROLE_LABELS } from "@/types/warehouse";
+import { useOrders } from "@/hooks/useSupabaseData";
+
+const ROLE_LABELS: Record<string, string> = {
+  funcionario: "Funcionário",
+  armazem: "Armazém",
+  admin: "Administrador",
+};
 
 export function GestaoSidebar() {
-  const { user, logout, orders } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
 
   if (!user) return null;
 
   const myOrders = user.role === "funcionario"
-    ? orders.filter((o) => o.createdBy === user.id)
+    ? orders.filter((o: any) => o.created_by === user.id)
     : orders;
 
-  const pendingCount = myOrders.filter((o) => o.status === "pendente").length;
-  const preparingCount = myOrders.filter((o) => o.status === "em_preparacao").length;
-  const readyCount = myOrders.filter((o) => o.status === "pronto").length;
+  const pendingCount = myOrders.filter((o: any) => o.status === "pendente").length;
+  const preparingCount = myOrders.filter((o: any) => o.status === "em_preparacao").length;
+  const readyCount = myOrders.filter((o: any) => o.status === "pronto").length;
+  const badgeCount = pendingCount + preparingCount + readyCount;
 
   const mainNav = [
-    { title: "Painel", url: "/gestao", icon: LayoutDashboard, roles: ["admin", "armazem", "funcionario"], badge: null },
+    { title: "Painel", url: "/gestao", icon: LayoutDashboard, roles: ["admin", "armazem", "funcionario"], badge: null as number | null },
     { title: "Novo Pedido", url: "/gestao/novo-pedido", icon: ShoppingCart, roles: ["funcionario"], badge: null },
-    { title: "Pedidos", url: "/gestao/pedidos", icon: ClipboardList, roles: ["admin", "armazem", "funcionario"], badge: pendingCount + preparingCount + readyCount || null },
+    { title: "Pedidos", url: "/gestao/pedidos", icon: ClipboardList, roles: ["admin", "armazem", "funcionario"], badge: badgeCount || null },
     { title: "Atividade", url: "/gestao/atividade", icon: Clock, roles: ["admin", "armazem"], badge: null },
   ].filter((item) => item.roles.includes(user.role));
 
@@ -53,8 +61,8 @@ export function GestaoSidebar() {
     { title: "Configurações", url: "/gestao/configuracoes", icon: Settings, roles: ["admin"] },
   ].filter((item) => item.roles.includes(user.role));
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/gestao/login");
   };
 
@@ -78,9 +86,9 @@ export function GestaoSidebar() {
                     {!collapsed && (
                       <span className="flex-1 flex items-center justify-between">
                         <span>{item.title}</span>
-                        {"badge" in item && (item as any).badge && (
+                        {"badge" in item && item.badge && (
                           <span className="ml-2 text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
-                            {(item as any).badge}
+                            {item.badge}
                           </span>
                         )}
                       </span>
@@ -115,7 +123,7 @@ export function GestaoSidebar() {
         {!collapsed && (
           <div className="px-3 pb-2">
             <p className="text-xs text-muted-foreground truncate font-normal">{user.name}</p>
-            <p className="text-[10px] text-muted-foreground/60 font-normal">{ROLE_LABELS[user.role]}{user.store ? ` · ${user.store}` : ""}</p>
+            <p className="text-[10px] text-muted-foreground/60 font-normal">{ROLE_LABELS[user.role] || user.role}{user.store ? ` · ${user.store}` : ""}</p>
           </div>
         )}
         <SidebarMenu>
