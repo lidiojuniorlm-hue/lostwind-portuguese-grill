@@ -1,16 +1,15 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import logo from "@/assets/logo-lostwind.jpeg";
-import { Flame, Mail, Lock, Loader2 } from "lucide-react";
+import { Flame } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
@@ -19,17 +18,13 @@ export default function LoginPage() {
     return null;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    const { error } = await login(email, password);
-    setIsLoading(false);
-
-    if (error) {
-      toast.error(error);
-    } else {
+    if (login(email, password)) {
       toast.success("Sessão iniciada!");
       navigate("/gestao");
+    } else {
+      toast.error("Credenciais inválidas");
     }
   };
 
@@ -37,57 +32,25 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <img
-            src={logo}
-            alt="Lost Wind"
-            className="h-20 w-20 rounded-full mx-auto mb-4 border-2 border-primary/30"
-          />
+          <img src={logo} alt="Lost Wind" className="h-20 w-20 rounded-full mx-auto mb-4 border-2 border-primary/30" />
           <h1 className="text-2xl font-heading text-foreground">Gestão Lost Wind</h1>
           <p className="text-sm text-muted-foreground mt-1">Acesso ao sistema de gestão</p>
         </div>
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 space-y-4">
           <div>
             <label className="text-sm text-muted-foreground block mb-1">Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                type="email"
-                placeholder="email@lostwind.pt"
-                className="pl-10"
-                required
-              />
-            </div>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="email@lostwind.pt" />
           </div>
           <div>
             <label className="text-sm text-muted-foreground block mb-1">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                type="password"
-                placeholder="••••••"
-                className="pl-10"
-                required
-              />
-            </div>
+            <Input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="••••••" />
           </div>
-          <Button type="submit" className="w-full bg-gradient-flame text-primary-foreground" disabled={isLoading}>
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Flame className="w-4 h-4 mr-2" />
-            )}
-            Entrar
+          <Button type="submit" className="w-full bg-gradient-flame text-primary-foreground">
+            <Flame className="w-4 h-4 mr-2" /> Entrar
           </Button>
         </form>
-        <p className="text-sm text-muted-foreground text-center mt-4">
-          Não tens conta?{" "}
-          <Link to="/gestao/register" className="text-primary hover:underline font-medium">
-            Criar conta
-          </Link>
+        <p className="text-[11px] text-muted-foreground/50 text-center mt-4">
+          Demo: admin@lostwind.pt / admin123
         </p>
       </div>
     </div>
