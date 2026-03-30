@@ -102,7 +102,14 @@ export default function Inventario() {
       <Card className="bg-card border-border"><CardContent className="p-0"><div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead><tr className="border-b border-border text-muted-foreground">
-            <th className="text-left py-3 px-4">Produto</th><th className="text-left py-3 px-4">Secção</th><th className="text-center py-3 px-4">Unidade</th><th className="text-center py-3 px-4">Stock</th><th className="text-center py-3 px-4">Pendente</th><th className="text-center py-3 px-4">Entregue</th><th className="text-center py-3 px-4">Total Saídas</th><th className="text-center py-3 px-4">Estado</th>
+            <th className="text-left py-3 px-4">Produto</th>
+            <th className="text-left py-3 px-4">Secção</th>
+            <th className="text-center py-3 px-4">Unidade</th>
+            <th className="text-center py-3 px-4">Stock</th>
+            <th className="text-center py-3 px-4">Pendente</th>
+            <th className="text-center py-3 px-4">Entregue</th>
+            <th className="text-center py-3 px-4">Total Saídas</th>
+            <th className="text-center py-3 px-4">Estado</th>
             {canEdit && <th className="text-center py-3 px-4">Ações</th>}
           </tr></thead>
           <tbody>
@@ -121,7 +128,11 @@ export default function Inventario() {
                     <Input value={editValues.unit} onChange={e => setEditValues(v => ({ ...v, unit: e.target.value }))} className="w-16 h-7 text-xs text-center mx-auto" />
                   ) : p.unit}
                 </td>
-                <td className="py-3 px-4 text-center text-foreground font-medium">{p.estimatedStock}</td>
+                <td className="py-3 px-4 text-center text-foreground font-medium">
+                  {editingId === p.id ? (
+                    <Input type="number" step="0.01" value={editValues.stock} onChange={e => setEditValues(v => ({ ...v, stock: parseFloat(e.target.value) || 0 }))} className="w-20 h-7 text-xs text-center mx-auto" />
+                  ) : p.currentStock}
+                </td>
                 <td className="py-3 px-4 text-center text-yellow-400">{p.pending || "-"}</td>
                 <td className="py-3 px-4 text-center text-green-400">{p.delivered || "-"}</td>
                 <td className="py-3 px-4 text-center text-foreground">{p.totalOut}</td>
