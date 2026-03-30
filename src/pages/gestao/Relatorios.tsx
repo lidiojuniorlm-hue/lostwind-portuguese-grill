@@ -13,7 +13,7 @@ export default function Relatorios() {
   const { user } = useAuth();
   const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
   const { data: products = [] } = useProducts();
-  const [period, setPeriod] = useState<"7d" | "30d" | "90d" | "all">("30d");
+  const [period, setPeriod] = useState<"hoje" | "7d" | "30d" | "90d" | "all">("30d");
   const [selectedStore, setSelectedStore] = useState<string>("todas");
 
   const stores = useMemo(() => Array.from(new Set(orders.map((o: any) => o.store_name))).sort(), [orders]);
@@ -21,7 +21,10 @@ export default function Relatorios() {
   const filteredOrders = useMemo(() => {
     let result = orders;
     if (selectedStore !== "todas") result = result.filter((o: any) => o.store_name === selectedStore);
-    if (period !== "all") {
+    if (period === "hoje") {
+      const today = new Date().toLocaleDateString("pt-PT");
+      result = result.filter((o: any) => new Date(o.created_at).toLocaleDateString("pt-PT") === today);
+    } else if (period !== "all") {
       const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
       const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
       result = result.filter((o: any) => new Date(o.created_at) >= cutoff);
@@ -135,9 +138,9 @@ export default function Relatorios() {
       <div className="flex flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-muted-foreground" />
-          {(["7d", "30d", "90d", "all"] as const).map(p => (
+          {(["hoje", "7d", "30d", "90d", "all"] as const).map(p => (
             <button key={p} onClick={() => setPeriod(p)} className={`text-xs px-3 py-1.5 rounded-lg border transition-all font-normal ${period === p ? "bg-primary/20 border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
-              {p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : p === "90d" ? "90 dias" : "Tudo"}
+              {p === "hoje" ? "Hoje" : p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : p === "90d" ? "90 dias" : "Tudo"}
             </button>
           ))}
         </div>

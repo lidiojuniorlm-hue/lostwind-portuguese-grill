@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProducts, useOrderMutations, useLogActivity } from "@/hooks/useSupabaseData";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +6,7 @@ import { SECTIONS, Section } from "@/types/warehouse";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Plus, Minus, Trash2, Send, ShoppingCart, Loader2 } from "lucide-react";
+import { Plus, Minus, Trash2, Send, ShoppingCart, Loader2, Search } from "lucide-react";
 
 interface CartItem {
   productId: string;
@@ -27,10 +27,14 @@ export default function NovoPedido() {
   const [activeSection, setActiveSection] = useState<Section>("Carnes");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [notes, setNotes] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   if (!user || user.role !== "funcionario") return null;
 
-  const sectionProducts = products.filter((p) => p.section === activeSection);
+  const sectionProducts = products
+    .filter((p) => p.section === activeSection)
+    .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const addToCart = (productId: string) => {
     const product = products.find((p) => p.id === productId);
@@ -113,6 +117,11 @@ export default function NovoPedido() {
         ))}
       </div>
 
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input placeholder="Pesquisar produto..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9" />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-2">
           {sectionProducts.length === 0 ? (
@@ -125,8 +134,7 @@ export default function NovoPedido() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">{product.name}</p>
                     <div className="flex gap-3 text-xs text-muted-foreground mt-1">
-                      <span className="text-primary font-semibold">€{Number(product.unit_price).toFixed(2)}/{product.unit}</span>
-                      <span>IVA {product.vat_rate}%</span>
+                      <span>{product.unit}</span>
                     </div>
                   </div>
                   {qty === 0 ? (
@@ -159,16 +167,10 @@ export default function NovoPedido() {
                 {cart.map((item) => (
                   <div key={item.productId} className="flex justify-between text-sm">
                     <span className="text-foreground truncate flex-1">{item.qty}x {item.productName}</span>
-                    <span className="text-muted-foreground ml-2">€{(item.unitPrice * item.qty).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
             )}
-            <div className="border-t border-border pt-3 space-y-1 text-sm">
-              <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>€{subtotal.toFixed(2)}</span></div>
-              <div className="flex justify-between text-muted-foreground"><span>IVA</span><span>€{totalVat.toFixed(2)}</span></div>
-              <div className="flex justify-between font-heading text-foreground text-base pt-1"><span>Total</span><span className="text-gradient-flame">€{total.toFixed(2)}</span></div>
-            </div>
             <div className="mt-4">
               <label className="text-xs text-muted-foreground block mb-1">Notas</label>
               <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Observações..." className="text-sm" />

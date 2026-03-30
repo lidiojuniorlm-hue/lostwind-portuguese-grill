@@ -11,12 +11,47 @@ export function useProducts() {
         .from("products")
         .select("*")
         .eq("active", true)
-        .order("section")
         .order("name");
       if (error) throw error;
       return data as Tables<"products">[];
     },
   });
+}
+
+// ─── Inventory ───
+export function useInventory() {
+  return useQuery({
+    queryKey: ["inventory"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory")
+        .select("*")
+        .order("updated_at", { ascending: false });
+      if (error) throw error;
+      return data as Tables<"inventory">[];
+    },
+  });
+}
+
+export function useInventoryMutations() {
+  const qc = useQueryClient();
+  const upsertInventory = useMutation({
+    mutationFn: async (item: { product_id: string; store_name: string; current_stock: number; min_stock: number; max_stock: number }) => {
+      const { error } = await supabase
+        .from("inventory")
+        .upsert({
+          product_id: item.product_id,
+          store_name: item.store_name,
+          current_stock: item.current_stock,
+          min_stock: item.min_stock,
+          max_stock: item.max_stock,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "product_id,store_name" });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["inventory"] }),
+  });
+  return { upsertInventory };
 }
 
 export function useProductMutations() {
