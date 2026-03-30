@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProducts, useProductMutations } from "@/hooks/useSupabaseData";
+import { useProducts, useProductMutations, useInventoryMutations } from "@/hooks/useSupabaseData";
 import { SECTIONS } from "@/types/warehouse";
 import type { Section, VatRate } from "@/types/warehouse";
 import { Button } from "@/components/ui/button";
@@ -93,7 +93,13 @@ export default function Produtos() {
             {s} ({products.filter((p) => p.section === s).length})
           </button>
         ))}
-      </div>
+              </div>
+              {isNew && (
+                <div>
+                  <label className="text-xs text-muted-foreground">Stock Inicial</label>
+                  <Input type="number" step="0.01" value={editing.initial_stock} onChange={(e) => setEditing({ ...editing, initial_stock: parseFloat(e.target.value) || 0 })} className="text-sm" />
+                </div>
+              )}
 
       {editing && (
         <Card className="bg-card border-primary/30">

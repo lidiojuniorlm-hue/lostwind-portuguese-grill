@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProducts, useOrders, useProductMutations } from "@/hooks/useSupabaseData";
+import { useProducts, useOrders, useProductMutations, useInventory, useInventoryMutations } from "@/hooks/useSupabaseData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
