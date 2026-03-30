@@ -16,6 +16,7 @@ interface EditingProduct {
   unit: string;
   unit_price: number;
   vat_rate: number;
+  initial_stock: number;
 }
 
 export default function Produtos() {
@@ -31,12 +32,12 @@ export default function Produtos() {
   const sectionProducts = products.filter((p) => p.section === activeSection);
 
   const startNew = () => {
-    setEditing({ name: "", section: activeSection, unit: "kg", unit_price: 0, vat_rate: 23 });
+    setEditing({ name: "", section: activeSection, unit: "kg", unit_price: 0, vat_rate: 23, initial_stock: 0 });
     setIsNew(true);
   };
 
   const startEdit = (p: any) => {
-    setEditing({ id: p.id, name: p.name, section: p.section, unit: p.unit, unit_price: Number(p.unit_price), vat_rate: Number(p.vat_rate) });
+    setEditing({ id: p.id, name: p.name, section: p.section, unit: p.unit, unit_price: Number(p.unit_price), vat_rate: Number(p.vat_rate), initial_stock: 0 });
     setIsNew(false);
   };
 

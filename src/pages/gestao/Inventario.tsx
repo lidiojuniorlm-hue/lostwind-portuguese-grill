@@ -12,28 +12,33 @@ export default function Inventario() {
   const { user } = useAuth();
   const { data: products = [] } = useProducts();
   const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
+  const { data: inventoryData = [] } = useInventory();
   const { updateProduct } = useProductMutations();
+  const { upsertInventory } = useInventoryMutations();
   const [search, setSearch] = useState("");
   const [filterSection, setFilterSection] = useState<string>("todas");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{ stock: number; section: string; unit: string }>({ stock: 0, section: "", unit: "" });
 
   const stockData = useMemo(() => {
+    const invMap: Record<string, number> = {};
+    inventoryData.forEach((inv: any) => {
+      if (inv.store_name === "Armazém") invMap[inv.product_id] = Number(inv.current_stock);
+    });
+
     return products.map((p: any) => {
-      const totalOut = orders
-        .filter((o: any) => o.status !== "cancelado")
+      const currentStock = invMap[p.id] ?? 0;
+      const pending = orders
+        .filter((o: any) => ["pendente", "em_preparacao", "pronto"].includes(o.status))
         .reduce((sum: number, o: any) => sum + (o.items || []).filter((i: any) => i.product_id === p.id).reduce((s: number, i: any) => s + Number(i.qty), 0), 0);
       const delivered = orders
         .filter((o: any) => o.status === "entregue")
         .reduce((sum: number, o: any) => sum + (o.items || []).filter((i: any) => i.product_id === p.id).reduce((s: number, i: any) => s + Number(i.qty), 0), 0);
-      const pending = orders
-        .filter((o: any) => ["pendente", "em_preparacao", "pronto"].includes(o.status))
-        .reduce((sum: number, o: any) => sum + (o.items || []).filter((i: any) => i.product_id === p.id).reduce((s: number, i: any) => s + Number(i.qty), 0), 0);
-      const estimatedStock = 100 - totalOut;
-      const status: "ok" | "low" | "critical" = estimatedStock <= 10 ? "critical" : estimatedStock <= 30 ? "low" : "ok";
-      return { ...p, totalOut, delivered, pending, estimatedStock: Math.max(0, estimatedStock), status };
+      const totalOut = pending + delivered;
+      const status: "ok" | "low" | "critical" = currentStock <= 10 ? "critical" : currentStock <= 30 ? "low" : "ok";
+      return { ...p, currentStock, totalOut, delivered, pending, status };
     }).sort((a: any, b: any) => a.name.localeCompare(b.name));
-  }, [products, orders]);
+  }, [products, orders, inventoryData]);
 
   const filtered = stockData.filter((p: any) =>
     (filterSection === "todas" || p.section === filterSection) &&
@@ -48,7 +53,7 @@ export default function Inventario() {
 
   const startEdit = (p: any) => {
     setEditingId(p.id);
-    setEditValues({ stock: p.estimatedStock, section: p.section, unit: p.unit });
+    setEditValues({ stock: p.currentStock, section: p.section, unit: p.unit });
   };
 
   const saveEdit = async (id: string) => {
@@ -58,8 +63,15 @@ export default function Inventario() {
         section: editValues.section as any,
         unit: editValues.unit,
       });
+      await upsertInventory.mutateAsync({
+        product_id: id,
+        store_name: "Armazém",
+        current_stock: editValues.stock,
+        min_stock: 10,
+        max_stock: 100,
+      });
       setEditingId(null);
-      toast.success("Produto atualizado!");
+      toast.success("Produto e stock atualizados!");
     } catch (e: any) {
       toast.error(e.message || "Erro ao atualizar");
     }
@@ -90,7 +102,7 @@ export default function Inventario() {
       <Card className="bg-card border-border"><CardContent className="p-0"><div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead><tr className="border-b border-border text-muted-foreground">
-            <th className="text-left py-3 px-4">Produto</th><th className="text-left py-3 px-4">Secção</th><th className="text-center py-3 px-4">Unidade</th><th className="text-center py-3 px-4">Stock Est.</th><th className="text-center py-3 px-4">Pendente</th><th className="text-center py-3 px-4">Entregue</th><th className="text-center py-3 px-4">Total Saídas</th><th className="text-center py-3 px-4">Estado</th>
+            <th className="text-left py-3 px-4">Produto</th><th className="text-left py-3 px-4">Secção</th><th className="text-center py-3 px-4">Unidade</th><th className="text-center py-3 px-4">Stock</th><th className="text-center py-3 px-4">Pendente</th><th className="text-center py-3 px-4">Entregue</th><th className="text-center py-3 px-4">Total Saídas</th><th className="text-center py-3 px-4">Estado</th>
             {canEdit && <th className="text-center py-3 px-4">Ações</th>}
           </tr></thead>
           <tbody>
