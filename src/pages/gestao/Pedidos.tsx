@@ -59,6 +59,7 @@ export default function Pedidos() {
 
   const statusFlow: OrderStatus[] = ["pendente", "em_preparacao", "pronto", "entregue"];
 
+  // Can edit price/vat when em_preparacao or pronto (admin/armazem)
   const canEditActuals = (status: OrderStatus) =>
     (user.role === "armazem" || user.role === "admin") &&
     (status === "em_preparacao" || status === "pronto");
@@ -66,7 +67,12 @@ export default function Pedidos() {
   const startEditing = (orderId: string, items: any[]) => {
     setEditingItems((prev) => ({
       ...prev,
-      [orderId]: items.map((i: any) => ({ ...i })),
+      [orderId]: items.map((i: any) => ({
+        ...i,
+        actual_qty: i.actual_qty ?? null,
+        actual_price: i.actual_price ?? null,
+        actual_vat: i.actual_vat ?? i.vat_rate,
+      })),
     }));
   };
 
@@ -94,6 +100,7 @@ export default function Pedidos() {
     toast.success("Valores atualizados com sucesso!");
   };
 
+  // Print for guia de transporte
   const handlePrintGuia = (orderId: string) => {
     const order = orders.find((o: any) => o.id === orderId);
     if (!order) return;
@@ -122,22 +129,45 @@ export default function Pedidos() {
     printWindow.document.close();
   };
 
+  // Print: only product, qty ordered, blank for real qty/weight. No price/IVA columns. Total with IVA at bottom.
   const handlePrint = (orderId: string) => {
     const order = orders.find((o: any) => o.id === orderId);
     if (!order) return;
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const items = (order as any).items || [];
+    const items = ((order as any).items || []).sort((a: any, b: any) => a.product_name.localeCompare(b.product_name));
     const sectionsHtml = SECTIONS.filter((s) => items.some((i: any) => i.section === s)).map((section) => {
-      const rows = items.filter((i: any) => i.section === section).map((item: any) => `<tr><td style="padding:6px;border:1px solid #ddd;">${item.product_name}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.qty} ${item.unit}</td><td style="padding:6px;border:1px solid #ddd;text-align:right;">${item.actual_price != null ? '€' + Number(item.actual_price).toFixed(2) : '—'}</td></tr>`).join("");
-      return `<h3 style="margin:12px 0 4px;color:#b45309;font-size:14px;">${section}</h3><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#f5f5f5;"><th style="padding:6px;border:1px solid #ddd;text-align:left;">Produto</th><th style="padding:6px;border:1px solid #ddd;">Qtd</th><th style="padding:6px;border:1px solid #ddd;">Preço</th></tr></thead><tbody>${rows}</tbody></table>`;
+      const sectionItems = items.filter((i: any) => i.section === section);
+      const rows = sectionItems.map((item: any) =>
+        `<tr>
+          <td style="padding:8px 6px;border:1px solid #ddd;">${item.product_name}</td>
+          <td style="padding:8px 6px;border:1px solid #ddd;text-align:center;">${item.qty} ${item.unit}</td>
+          <td style="padding:8px 6px;border:1px solid #ddd;text-align:center;min-width:80px;">&nbsp;</td>
+          <td style="padding:8px 6px;border:1px solid #ddd;text-align:center;min-width:80px;">&nbsp;</td>
+        </tr>`
+      ).join("");
+      return `<h3 style="margin:16px 0 6px;color:#b45309;font-size:14px;">${section}</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="background:#f5f5f5;">
+            <th style="padding:6px;border:1px solid #ddd;text-align:left;">Produto</th>
+            <th style="padding:6px;border:1px solid #ddd;text-align:center;">Qtd Pedida</th>
+            <th style="padding:6px;border:1px solid #ddd;text-align:center;">Qtd Real</th>
+            <th style="padding:6px;border:1px solid #ddd;text-align:center;">Peso</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
     }).join("");
 
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Pedido ${(order as any).store_name}</title></head>
       <body style="font-family:Arial,sans-serif;padding:20px;color:#333;">
-        <div style="text-align:center;margin-bottom:20px;"><h1 style="margin:0;font-size:20px;">Lost Wind Churrasqueira</h1><p style="margin:4px 0;font-size:13px;color:#666;">Pedido — ${(order as any).store_name}</p></div>
+        <div style="text-align:center;margin-bottom:20px;">
+          <h1 style="margin:0;font-size:20px;">Lost Wind Churrasqueira</h1>
+          <p style="margin:4px 0;font-size:13px;color:#666;">Lista de Conferência — ${(order as any).store_name}</p>
+          <p style="margin:2px 0;font-size:12px;color:#999;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" })}</p>
+        </div>
         ${sectionsHtml}
+        ${(order as any).notes ? `<p style="margin-top:12px;font-size:11px;"><strong>Notas:</strong> ${(order as any).notes}</p>` : ""}
         <script>window.onload=function(){window.print();}<\/script>
       </body></html>`);
     printWindow.document.close();
@@ -167,10 +197,15 @@ export default function Pedidos() {
             const expanded = expandedOrder === order.id;
             const isEditing = !!editingItems[order.id];
             const displayItems = isEditing ? editingItems[order.id] : (order.items || []);
-            const orderSubtotal = (order.items || []).reduce((s: number, i: any) => s + (Number(i.actual_price) || Number(i.unit_price)) * (Number(i.actual_qty) || Number(i.qty)), 0);
-            const orderVat = (order.items || []).reduce((s: number, i: any) => s + (Number(i.actual_price) || Number(i.unit_price)) * (Number(i.actual_qty) || Number(i.qty)) * ((Number(i.actual_vat) || Number(i.vat_rate)) / 100), 0);
-            const orderTotal = orderSubtotal + orderVat;
             const hasActuals = (order.items || []).some((i: any) => i.actual_price != null);
+            const orderTotal = hasActuals
+              ? (order.items || []).reduce((s: number, i: any) => {
+                  const price = Number(i.actual_price) || Number(i.unit_price);
+                  const qty = Number(i.actual_qty) || Number(i.qty);
+                  const vat = Number(i.actual_vat) || Number(i.vat_rate);
+                  return s + price * qty * (1 + vat / 100);
+                }, 0)
+              : 0;
 
             return (
               <Card key={order.id} className="bg-card border-border">
@@ -218,7 +253,13 @@ export default function Pedidos() {
                                     <div className="text-right text-xs text-muted-foreground shrink-0">
                                       {item.actual_qty != null && <span className="text-primary mr-2">Real: {Number(item.actual_qty)} {item.unit}</span>}
                                       {item.actual_price != null ? (
-                                        <><span>€{Number(item.actual_price).toFixed(2)}</span><span className="ml-1 opacity-60">({item.actual_vat ?? item.vat_rate}%)</span></>
+                                        <>
+                                          <span>€{Number(item.actual_price).toFixed(2)}</span>
+                                          <span className="ml-1 opacity-60">({item.actual_vat ?? item.vat_rate}% IVA)</span>
+                                          <span className="ml-1 font-medium text-foreground">
+                                            = €{(Number(item.actual_price) * (Number(item.actual_qty) || Number(item.qty)) * (1 + (Number(item.actual_vat) || Number(item.vat_rate)) / 100)).toFixed(2)}
+                                          </span>
+                                        </>
                                       ) : <span className="opacity-40 italic">s/ valores</span>}
                                     </div>
                                   )}
@@ -231,8 +272,8 @@ export default function Pedidos() {
                                     <div className="flex flex-col"><label className="text-[10px] text-muted-foreground">Preço Un.</label>
                                       <Input type="number" step="0.01" placeholder={Number(item.unit_price).toFixed(2)} value={item.actual_price ?? ""} onChange={(e) => updateEditItem(order.id, item.id, "actual_price", parseFloat(e.target.value) || 0)} className="w-20 h-7 text-xs" />
                                     </div>
-                                    <div className="flex flex-col"><label className="text-[10px] text-muted-foreground">IVA %</label>
-                                      <Input type="number" step="1" placeholder={String(item.vat_rate)} value={item.actual_vat ?? ""} onChange={(e) => updateEditItem(order.id, item.id, "actual_vat", parseFloat(e.target.value) || 0)} className="w-16 h-7 text-xs" />
+                                    <div className="flex flex-col"><label className="text-[10px] text-muted-foreground">IVA % (predefinido: {item.vat_rate}%)</label>
+                                      <Input type="number" step="1" placeholder={String(item.vat_rate)} value={item.actual_vat ?? item.vat_rate} onChange={(e) => updateEditItem(order.id, item.id, "actual_vat", parseFloat(e.target.value) || 0)} className="w-20 h-7 text-xs" />
                                     </div>
                                   </div>
                                 )}
@@ -250,13 +291,12 @@ export default function Pedidos() {
 
                       <div className="border-t border-border pt-2 text-sm space-y-1">
                         {hasActuals ? (
-                          <>
-                            <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>€{orderSubtotal.toFixed(2)}</span></div>
-                            <div className="flex justify-between text-muted-foreground"><span>IVA</span><span>€{orderVat.toFixed(2)}</span></div>
-                            <div className="flex justify-between font-heading text-foreground"><span>Total</span><span className="text-gradient-flame">€{orderTotal.toFixed(2)}</span></div>
-                          </>
+                          <div className="flex justify-between font-heading text-foreground">
+                            <span>Total (c/ IVA)</span>
+                            <span className="text-gradient-flame">€{orderTotal.toFixed(2)}</span>
+                          </div>
                         ) : (
-                          <p className="text-xs text-muted-foreground italic">Valores de preço, IVA e peso serão preenchidos após separação do pedido.</p>
+                          <p className="text-xs text-muted-foreground italic">Valores de preço e IVA serão preenchidos após início da preparação.</p>
                         )}
                       </div>
 

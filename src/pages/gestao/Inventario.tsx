@@ -1,17 +1,22 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProducts, useOrders } from "@/hooks/useSupabaseData";
+import { useProducts, useOrders, useProductMutations } from "@/hooks/useSupabaseData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { SECTIONS } from "@/types/warehouse";
-import { Package, AlertTriangle, CheckCircle, Search } from "lucide-react";
+import { Package, AlertTriangle, CheckCircle, Search, Save, X, Pencil } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Inventario() {
   const { user } = useAuth();
   const { data: products = [] } = useProducts();
   const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
+  const { updateProduct } = useProductMutations();
   const [search, setSearch] = useState("");
   const [filterSection, setFilterSection] = useState<string>("todas");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<{ stock: number; section: string; unit: string }>({ stock: 0, section: "", unit: "" });
 
   const stockData = useMemo(() => {
     return products.map((p: any) => {
@@ -27,7 +32,7 @@ export default function Inventario() {
       const estimatedStock = 100 - totalOut;
       const status: "ok" | "low" | "critical" = estimatedStock <= 10 ? "critical" : estimatedStock <= 30 ? "low" : "ok";
       return { ...p, totalOut, delivered, pending, estimatedStock: Math.max(0, estimatedStock), status };
-    });
+    }).sort((a: any, b: any) => a.name.localeCompare(b.name));
   }, [products, orders]);
 
   const filtered = stockData.filter((p: any) =>
@@ -38,6 +43,27 @@ export default function Inventario() {
   const criticalCount = stockData.filter((p: any) => p.status === "critical").length;
   const lowCount = stockData.filter((p: any) => p.status === "low").length;
   const totalMovements = stockData.reduce((s: number, p: any) => s + p.totalOut, 0);
+
+  const canEdit = user?.role === "admin" || user?.role === "armazem";
+
+  const startEdit = (p: any) => {
+    setEditingId(p.id);
+    setEditValues({ stock: p.estimatedStock, section: p.section, unit: p.unit });
+  };
+
+  const saveEdit = async (id: string) => {
+    try {
+      await updateProduct.mutateAsync({
+        id,
+        section: editValues.section as any,
+        unit: editValues.unit,
+      });
+      setEditingId(null);
+      toast.success("Produto atualizado!");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao atualizar");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -65,13 +91,24 @@ export default function Inventario() {
         <table className="w-full text-xs">
           <thead><tr className="border-b border-border text-muted-foreground">
             <th className="text-left py-3 px-4">Produto</th><th className="text-left py-3 px-4">Secção</th><th className="text-center py-3 px-4">Unidade</th><th className="text-center py-3 px-4">Stock Est.</th><th className="text-center py-3 px-4">Pendente</th><th className="text-center py-3 px-4">Entregue</th><th className="text-center py-3 px-4">Total Saídas</th><th className="text-center py-3 px-4">Estado</th>
+            {canEdit && <th className="text-center py-3 px-4">Ações</th>}
           </tr></thead>
           <tbody>
             {filtered.map((p: any) => (
               <tr key={p.id} className="border-b border-border/50 hover:bg-secondary/30">
                 <td className="py-3 px-4 text-foreground font-medium">{p.name}</td>
-                <td className="py-3 px-4 text-muted-foreground">{p.section}</td>
-                <td className="py-3 px-4 text-center text-muted-foreground">{p.unit}</td>
+                <td className="py-3 px-4 text-muted-foreground">
+                  {editingId === p.id ? (
+                    <select value={editValues.section} onChange={e => setEditValues(v => ({ ...v, section: e.target.value }))} className="text-xs px-2 py-1 rounded border border-border bg-background text-foreground w-full">
+                      {SECTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  ) : p.section}
+                </td>
+                <td className="py-3 px-4 text-center text-muted-foreground">
+                  {editingId === p.id ? (
+                    <Input value={editValues.unit} onChange={e => setEditValues(v => ({ ...v, unit: e.target.value }))} className="w-16 h-7 text-xs text-center mx-auto" />
+                  ) : p.unit}
+                </td>
                 <td className="py-3 px-4 text-center text-foreground font-medium">{p.estimatedStock}</td>
                 <td className="py-3 px-4 text-center text-yellow-400">{p.pending || "-"}</td>
                 <td className="py-3 px-4 text-center text-green-400">{p.delivered || "-"}</td>
@@ -81,6 +118,18 @@ export default function Inventario() {
                     {p.status === "critical" ? "Crítico" : p.status === "low" ? "Baixo" : "OK"}
                   </span>
                 </td>
+                {canEdit && (
+                  <td className="py-3 px-4 text-center">
+                    {editingId === p.id ? (
+                      <div className="flex items-center justify-center gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => saveEdit(p.id)} className="h-7 w-7 p-0"><Save className="w-3 h-3 text-green-500" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} className="h-7 w-7 p-0"><X className="w-3 h-3 text-destructive" /></Button>
+                      </div>
+                    ) : (
+                      <Button size="sm" variant="ghost" onClick={() => startEdit(p)} className="h-7 w-7 p-0"><Pencil className="w-3 h-3 text-muted-foreground" /></Button>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

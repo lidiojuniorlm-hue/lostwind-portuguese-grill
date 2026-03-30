@@ -1,8 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProducts, useOrders, useUsers } from "@/hooks/useSupabaseData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, ClipboardList, Users, ShoppingCart, TrendingUp, Euro, AlertTriangle, Truck, Clock, ArrowUpRight } from "lucide-react";
+import { Package, ClipboardList, Users, ShoppingCart, TrendingUp, Euro, AlertTriangle, Truck, Clock, ArrowUpRight, ChevronDown, ChevronUp } from "lucide-react";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, SECTIONS } from "@/types/warehouse";
 import { Link } from "react-router-dom";
 
@@ -11,6 +11,7 @@ export default function Dashboard() {
   const { data: products = [] } = useProducts();
   const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
   const { data: users = [] } = useUsers();
+  const [showHistory, setShowHistory] = useState(false);
 
   const myOrders = useMemo(() => {
     if (!user) return [];
@@ -19,19 +20,31 @@ export default function Dashboard() {
       : orders;
   }, [user, orders]);
 
+  const today = new Date().toLocaleDateString("pt-PT");
+
+  const todayOrders = useMemo(() =>
+    myOrders.filter((o: any) => new Date(o.created_at).toLocaleDateString("pt-PT") === today)
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    [myOrders, today]
+  );
+
+  const previousOrders = useMemo(() =>
+    myOrders.filter((o: any) => new Date(o.created_at).toLocaleDateString("pt-PT") !== today)
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 20),
+    [myOrders, today]
+  );
+
   const pendingOrders = myOrders.filter((o: any) => o.status === "pendente").length;
   const preparingOrders = myOrders.filter((o: any) => o.status === "em_preparacao").length;
   const readyOrders = myOrders.filter((o: any) => o.status === "pronto").length;
   const deliveredOrders = myOrders.filter((o: any) => o.status === "entregue").length;
-  const recentOrders = [...myOrders].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 8);
 
   const totalValue = myOrders.reduce(
     (sum: number, o: any) => sum + (o.items || []).reduce((s: number, i: any) => s + Number(i.unit_price) * Number(i.qty) * (1 + Number(i.vat_rate) / 100), 0),
     0
   );
 
-  const today = new Date().toLocaleDateString("pt-PT");
-  const todayOrders = myOrders.filter((o: any) => new Date(o.created_at).toLocaleDateString("pt-PT") === today);
   const todayValue = todayOrders.reduce((sum: number, o: any) => sum + (o.items || []).reduce((s: number, i: any) => s + Number(i.unit_price) * Number(i.qty) * (1 + Number(i.vat_rate) / 100), 0), 0);
 
   const stockAlerts = useMemo(() => {
@@ -55,6 +68,23 @@ export default function Dashboard() {
 
   const isAdmin = user.role === "admin";
   const isWarehouse = user.role === "armazem" || user.role === "admin";
+
+  const renderOrderRow = (order: any) => {
+    const total = (order.items || []).reduce((s: number, i: any) => s + Number(i.unit_price) * Number(i.qty) * (1 + Number(i.vat_rate) / 100), 0);
+    return (
+      <Link key={order.id} to="/gestao/pedidos" className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
+        <div>
+          <p className="text-sm font-medium text-foreground">{order.store_name}</p>
+          <p className="text-xs text-muted-foreground font-normal">
+            {new Date(order.created_at).toLocaleDateString("pt-PT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} · {(order.items || []).length} itens
+          </p>
+        </div>
+        <span className={`text-xs px-2 py-1 rounded-full font-normal ${ORDER_STATUS_COLORS[order.status as keyof typeof ORDER_STATUS_COLORS]}`}>
+          {ORDER_STATUS_LABELS[order.status as keyof typeof ORDER_STATUS_LABELS]}
+        </span>
+      </Link>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -88,30 +118,29 @@ export default function Dashboard() {
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="bg-card border-border md:col-span-2 lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg font-heading tracking-wide">Últimos Pedidos</CardTitle>
+            <CardTitle className="text-lg font-heading tracking-wide">Pedidos de Hoje ({todayOrders.length})</CardTitle>
             <Link to="/gestao/pedidos" className="text-xs text-primary hover:underline flex items-center gap-1 font-normal">Ver todos <ArrowUpRight className="w-3 h-3" /></Link>
           </CardHeader>
           <CardContent>
-            {recentOrders.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4 font-normal">Nenhum pedido ainda</p>
+            {todayOrders.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4 font-normal">Nenhum pedido hoje</p>
             ) : (
               <div className="space-y-2">
-                {recentOrders.map((order: any) => {
-                  const total = (order.items || []).reduce((s: number, i: any) => s + Number(i.unit_price) * Number(i.qty) * (1 + Number(i.vat_rate) / 100), 0);
-                  return (
-                    <Link key={order.id} to="/gestao/pedidos" className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{order.store_name}</p>
-                        <p className="text-xs text-muted-foreground font-normal">
-                          {new Date(order.created_at).toLocaleDateString("pt-PT")} · {(order.items || []).length} itens · €{total.toFixed(2)}
-                        </p>
-                      </div>
-                      <span className={`text-xs px-2 py-1 rounded-full font-normal ${ORDER_STATUS_COLORS[order.status as keyof typeof ORDER_STATUS_COLORS]}`}>
-                        {ORDER_STATUS_LABELS[order.status as keyof typeof ORDER_STATUS_LABELS]}
-                      </span>
-                    </Link>
-                  );
-                })}
+                {todayOrders.map(renderOrderRow)}
+              </div>
+            )}
+
+            {previousOrders.length > 0 && (
+              <div className="mt-4 border-t border-border pt-3">
+                <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full">
+                  {showHistory ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  <span>Pedidos anteriores ({previousOrders.length})</span>
+                </button>
+                {showHistory && (
+                  <div className="space-y-2 mt-2">
+                    {previousOrders.map(renderOrderRow)}
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
