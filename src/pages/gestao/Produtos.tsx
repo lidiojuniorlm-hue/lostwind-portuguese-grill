@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProducts, useProductMutations } from "@/hooks/useSupabaseData";
+import { useProducts, useProductMutations, useInventoryMutations } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
 import { SECTIONS } from "@/types/warehouse";
-import type { Section, VatRate } from "@/types/warehouse";
+import type { Section } from "@/types/warehouse";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,12 +17,14 @@ interface EditingProduct {
   unit: string;
   unit_price: number;
   vat_rate: number;
+  initial_stock: number;
 }
 
 export default function Produtos() {
   const { user } = useAuth();
   const { data: products = [] } = useProducts();
-  const { addProduct, updateProduct, deleteProduct } = useProductMutations();
+  const { updateProduct, deleteProduct } = useProductMutations();
+  const { upsertInventory } = useInventoryMutations();
   const [activeSection, setActiveSection] = useState<Section>("Carnes");
   const [editing, setEditing] = useState<EditingProduct | null>(null);
   const [isNew, setIsNew] = useState(false);
@@ -31,12 +34,12 @@ export default function Produtos() {
   const sectionProducts = products.filter((p) => p.section === activeSection);
 
   const startNew = () => {
-    setEditing({ name: "", section: activeSection, unit: "kg", unit_price: 0, vat_rate: 23 });
+    setEditing({ name: "", section: activeSection, unit: "kg", unit_price: 0, vat_rate: 23, initial_stock: 0 });
     setIsNew(true);
   };
 
   const startEdit = (p: any) => {
-    setEditing({ id: p.id, name: p.name, section: p.section, unit: p.unit, unit_price: Number(p.unit_price), vat_rate: Number(p.vat_rate) });
+    setEditing({ id: p.id, name: p.name, section: p.section, unit: p.unit, unit_price: Number(p.unit_price), vat_rate: Number(p.vat_rate), initial_stock: 0 });
     setIsNew(false);
   };
 
@@ -44,13 +47,27 @@ export default function Produtos() {
     if (!editing || !editing.name.trim()) { toast.error("Nome é obrigatório"); return; }
     try {
       if (isNew) {
-        await addProduct.mutateAsync({
-          name: editing.name,
-          section: editing.section as any,
-          unit: editing.unit,
-          unit_price: editing.unit_price,
-          vat_rate: editing.vat_rate,
-        });
+        const { data: newProduct, error } = await supabase
+          .from("products")
+          .insert({
+            name: editing.name,
+            section: editing.section as any,
+            unit: editing.unit,
+            unit_price: editing.unit_price,
+            vat_rate: editing.vat_rate,
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        if (newProduct && editing.initial_stock > 0) {
+          await upsertInventory.mutateAsync({
+            product_id: newProduct.id,
+            store_name: "Armazém",
+            current_stock: editing.initial_stock,
+            min_stock: 10,
+            max_stock: 100,
+          });
+        }
       } else {
         await updateProduct.mutateAsync({
           id: editing.id!,
@@ -125,6 +142,12 @@ export default function Produtos() {
                   <option value={23}>23%</option>
                 </select>
               </div>
+              {isNew && (
+                <div>
+                  <label className="text-xs text-muted-foreground">Stock Inicial</label>
+                  <Input type="number" step="0.01" value={editing.initial_stock} onChange={(e) => setEditing({ ...editing, initial_stock: parseFloat(e.target.value) || 0 })} className="text-sm" />
+                </div>
+              )}
             </div>
             <div className="flex gap-2 justify-end">
               <Button size="sm" variant="ghost" onClick={() => { setEditing(null); setIsNew(false); }}><X className="w-4 h-4 mr-1" /> Cancelar</Button>
