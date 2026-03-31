@@ -224,20 +224,20 @@ export default function Pedidos() {
           <td style="padding:8px 10px;border:1px solid #d7d7d7;text-align:center;width:52px;">
             <div style="width:18px;height:18px;border:2px solid #666;border-radius:4px;display:inline-block;"></div>
           </td>
-          <td style="padding:8px 16px;border:1px solid #d7d7d7;font-size:8.5px;color:#3a3a3a;">${item.product_name}</td>
-          <td style="padding:8px 12px;border:1px solid #d7d7d7;text-align:center;font-size:8.5px;color:#3a3a3a;">${orderedQty}</td>
-          <td style="padding:8px 12px;border:1px solid #d7d7d7;text-align:center;font-size:8.5px;color:#3a3a3a;">${realQtyContent}</td>
+          <td style="padding:8px 16px;border:1px solid #d7d7d7;font-size:11px;color:#3a3a3a;">${item.product_name}</td>
+          <td style="padding:8px 12px;border:1px solid #d7d7d7;text-align:center;font-size:11px;color:#3a3a3a;">${orderedQty}</td>
+          <td style="padding:8px 12px;border:1px solid #d7d7d7;text-align:center;font-size:11px;color:#3a3a3a;">${realQtyContent}</td>
         </tr>`;
       }).join("");
 
       return `<div style="margin-bottom:14px;">
-        <div style="font-size:8.5px;font-weight:700;color:#b45309;margin-bottom:5px;">${section}</div>
+        <div style="font-size:12px;font-weight:700;color:#b45309;margin-bottom:5px;">${section}</div>
         <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
           <thead><tr style="background:#fafafa;">
-            <th style="padding:6px 8px;font-size:8px;text-align:center;border:1px solid #d7d7d7;width:52px;">✓</th>
-            <th style="padding:6px 12px;font-size:8px;text-align:left;border:1px solid #d7d7d7;">Produto</th>
-            <th style="padding:6px 12px;font-size:8px;text-align:center;border:1px solid #d7d7d7;width:120px;">Qtd Pedida</th>
-            <th style="padding:6px 12px;font-size:8px;text-align:center;border:1px solid #d7d7d7;width:150px;">Qtd Real / Peso</th>
+            <th style="padding:6px 8px;font-size:10px;text-align:center;border:1px solid #d7d7d7;width:52px;">✓</th>
+            <th style="padding:6px 12px;font-size:10px;text-align:left;border:1px solid #d7d7d7;">Produto</th>
+            <th style="padding:6px 12px;font-size:10px;text-align:center;border:1px solid #d7d7d7;width:120px;">Qtd Pedida</th>
+            <th style="padding:6px 12px;font-size:10px;text-align:center;border:1px solid #d7d7d7;width:150px;">Qtd Real / Peso</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
@@ -248,29 +248,29 @@ export default function Pedidos() {
       <style>
         @page { size:A4; margin:10mm; }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Segoe UI',Arial,sans-serif; padding:14px 18px; color:#333; font-size:9px; }
+        body { font-family:'Inter','Helvetica Neue',Arial,sans-serif; padding:14px 18px; color:#333; font-size:12px; }
       </style></head>
       <body>
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;font-size:7.5px;color:#222;margin-bottom:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;font-size:10px;color:#222;margin-bottom:18px;">
           <div>${printedAt.toLocaleDateString("pt-PT")} ${printedAt.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</div>
           <div>Pedido ${(order as any).store_name}</div>
         </div>
         <div style="text-align:center;margin-bottom:18px;">
-          <div style="font-size:13px;font-weight:800;color:#3a3a3a;margin-bottom:4px;">Lost Wind Churrasqueira</div>
-          <div style="font-size:9px;color:#666;margin-bottom:3px;">Pedido de Stock — ${(order as any).store_name}</div>
-          <div style="font-size:8px;color:#666;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })} às ${new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} · Estado: ${ORDER_STATUS_LABELS[(order as any).status as OrderStatus]}</div>
+          <div style="font-size:20px;font-weight:800;color:#1a1a1a;margin-bottom:5px;letter-spacing:0.5px;font-family:'Helvetica Neue','Inter',Arial,sans-serif;">Lost Wind Churrasqueira</div>
+          <div style="font-size:12px;color:#555;margin-bottom:3px;">Pedido de Stock — ${(order as any).store_name}</div>
+          <div style="font-size:11px;color:#666;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })} às ${new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} · Estado: ${ORDER_STATUS_LABELS[(order as any).status as OrderStatus]}</div>
         </div>
-        <div style="font-size:8px;color:#555;margin:0 0 14px 8px;">📝 ${showReadyValues ? "Valores reais digitalizados após finalização do pedido" : "Qtd real / peso para preenchimento manual"}</div>
+        <div style="font-size:10px;color:#555;margin:0 0 14px 8px;">📝 ${showReadyValues ? "Valores reais digitalizados após finalização do pedido" : "Qtd real / peso para preenchimento manual"}</div>
         ${sectionsHtml}
         ${financialSummary ? `
           <div style="margin-top:18px;border-top:2px solid #3f3f3f;padding-top:10px;display:flex;justify-content:flex-end;">
             <div style="width:220px;">
-              <div style="display:flex;justify-content:space-between;font-size:8px;color:#444;margin-bottom:3px;"><span>Subtotal</span><span>€${financialSummary.subtotal.toFixed(2)}</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:8px;color:#444;margin-bottom:3px;"><span>IVA</span><span>€${financialSummary.vat.toFixed(2)}</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:800;color:#333;"><span>Total</span><span>€${financialSummary.total.toFixed(2)}</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:3px;"><span>Subtotal</span><span>€${financialSummary.subtotal.toFixed(2)}</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:3px;"><span>IVA</span><span>€${financialSummary.vat.toFixed(2)}</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:#333;"><span>Total</span><span>€${financialSummary.total.toFixed(2)}</span></div>
             </div>
           </div>` : ""}
-        ${(order as any).notes ? `<p style="margin-top:6px;font-size:8px;"><strong>Notas:</strong> ${(order as any).notes}</p>` : ""}
+        ${(order as any).notes ? `<p style="margin-top:6px;font-size:10px;"><strong>Notas:</strong> ${(order as any).notes}</p>` : ""}
         <script>window.onload=function(){window.print();}<\/script>
       </body></html>`);
     printWindow.document.close();
