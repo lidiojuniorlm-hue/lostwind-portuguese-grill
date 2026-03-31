@@ -176,8 +176,8 @@ export default function Pedidos() {
     printWindow.document.close();
   };
 
-  // Print: Conference sheet with checkboxes, smaller fonts, fit one page
-  // When pronto/entregue and has actuals, show filled values
+  // Print: Conference sheet with checkboxes and smaller fonts
+  // Always show actual values if they have been saved
   const handlePrint = (orderId: string) => {
     const order = orders.find((o: any) => o.id === orderId);
     if (!order) return;
@@ -185,62 +185,56 @@ export default function Pedidos() {
     if (!printWindow) return;
 
     const items = ((order as any).items || []).sort((a: any, b: any) => a.product_name.localeCompare(b.product_name));
-    const isProntoOrEntregue = (order as any).status === "pronto" || (order as any).status === "entregue";
-    const hasActuals = items.some((i: any) => i.actual_price != null);
-    const showActuals = isProntoOrEntregue && hasActuals;
+    const hasActuals = items.some((i: any) => i.actual_price != null || i.actual_qty != null);
 
-    const totalWithVat = showActuals
+    const totalWithVat = hasActuals
       ? items.reduce((s: number, i: any) => {
-          const price = Number(i.actual_price) || Number(i.unit_price);
-          const qty = Number(i.actual_qty) || Number(i.qty);
-          const vat = Number(i.actual_vat) || Number(i.vat_rate);
+          const price = Number(i.actual_price ?? i.unit_price);
+          const qty = Number(i.actual_qty ?? i.qty);
+          const vat = Number(i.actual_vat ?? i.vat_rate);
           return s + price * qty * (1 + vat / 100);
         }, 0)
-      : 0;
+      : items.reduce((s: number, i: any) => {
+          return s + Number(i.unit_price) * Number(i.qty) * (1 + Number(i.vat_rate) / 100);
+        }, 0);
 
     const sectionsHtml = SECTIONS.filter((s) => items.some((i: any) => i.section === s)).map((section) => {
       const sectionItems = items.filter((i: any) => i.section === section);
-      const headers = showActuals
-        ? `<th style="padding:2px 4px;border:1px solid #ccc;text-align:left;font-size:7px;">✓</th>
-           <th style="padding:2px 4px;border:1px solid #ccc;text-align:left;font-size:7px;">Produto</th>
-           <th style="padding:2px 4px;border:1px solid #ccc;text-align:center;font-size:7px;">Qtd Pedida</th>
-           <th style="padding:2px 4px;border:1px solid #ccc;text-align:center;font-size:7px;">Qtd Real</th>
-           <th style="padding:2px 4px;border:1px solid #ccc;text-align:center;font-size:7px;">Preço Un.</th>
-           <th style="padding:2px 4px;border:1px solid #ccc;text-align:center;font-size:7px;">Total c/IVA</th>`
-        : `<th style="padding:2px 4px;border:1px solid #ccc;text-align:left;font-size:7px;">✓</th>
-           <th style="padding:2px 4px;border:1px solid #ccc;text-align:left;font-size:7px;">Produto</th>
-           <th style="padding:2px 4px;border:1px solid #ccc;text-align:center;font-size:7px;">Qtd Pedida</th>
-           <th style="padding:2px 4px;border:1px solid #ccc;text-align:center;font-size:7px;">Qtd Real</th>
-           <th style="padding:2px 4px;border:1px solid #ccc;text-align:center;font-size:7px;">Peso</th>`;
 
       const rows = sectionItems.map((item: any) => {
-        if (showActuals) {
-          const price = Number(item.actual_price) || Number(item.unit_price);
-          const qty = Number(item.actual_qty) || Number(item.qty);
-          const vat = Number(item.actual_vat) || Number(item.vat_rate);
-          const lineTotal = price * qty * (1 + vat / 100);
-          return `<tr>
-            <td style="padding:2px 4px;border:1px solid #eee;text-align:center;width:18px;"><div style="width:10px;height:10px;border:1px solid #999;border-radius:2px;"></div></td>
-            <td style="padding:2px 4px;border:1px solid #eee;font-size:7px;">${item.product_name}</td>
-            <td style="padding:2px 4px;border:1px solid #eee;text-align:center;font-size:7px;">${item.qty} ${item.unit}</td>
-            <td style="padding:2px 4px;border:1px solid #eee;text-align:center;font-size:7px;">${qty} ${item.unit}</td>
-            <td style="padding:2px 4px;border:1px solid #eee;text-align:center;font-size:7px;">€${price.toFixed(2)}</td>
-            <td style="padding:2px 4px;border:1px solid #eee;text-align:center;font-size:7px;font-weight:600;">€${lineTotal.toFixed(2)}</td>
-          </tr>`;
-        }
+        const actualQty = item.actual_qty != null ? Number(item.actual_qty) : null;
+        const actualPrice = item.actual_price != null ? Number(item.actual_price) : null;
+        const actualVat = item.actual_vat != null ? Number(item.actual_vat) : null;
+        const displayPrice = actualPrice ?? Number(item.unit_price);
+        const displayQty = actualQty ?? Number(item.qty);
+        const displayVat = actualVat ?? Number(item.vat_rate);
+        const lineTotal = displayPrice * displayQty * (1 + displayVat / 100);
+
         return `<tr>
-          <td style="padding:2px 4px;border:1px solid #eee;text-align:center;width:18px;"><div style="width:10px;height:10px;border:1px solid #999;border-radius:2px;"></div></td>
-          <td style="padding:2px 4px;border:1px solid #eee;font-size:7px;">${item.product_name}</td>
-          <td style="padding:2px 4px;border:1px solid #eee;text-align:center;font-size:7px;">${item.qty} ${item.unit}</td>
-          <td style="padding:2px 4px;border:1px solid #eee;text-align:center;font-size:7px;min-width:40px;">&nbsp;</td>
-          <td style="padding:2px 4px;border:1px solid #eee;text-align:center;font-size:7px;min-width:40px;">&nbsp;</td>
+          <td style="padding:2px 4px;border-bottom:1px solid #ddd;text-align:center;width:20px;">
+            <div style="width:11px;height:11px;border:1.5px solid #555;border-radius:2px;display:inline-block;"></div>
+          </td>
+          <td style="padding:2px 4px;border-bottom:1px solid #ddd;font-size:8px;">${item.product_name}</td>
+          <td style="padding:2px 4px;border-bottom:1px solid #ddd;text-align:center;font-size:8px;">${item.qty} ${item.unit}</td>
+          <td style="padding:2px 4px;border-bottom:1px solid #ddd;text-align:center;font-size:8px;font-weight:${actualQty != null ? '600' : '400'};">${actualQty != null ? `${actualQty} ${item.unit}` : '___'}</td>
+          <td style="padding:2px 4px;border-bottom:1px solid #ddd;text-align:center;font-size:8px;">€${displayPrice.toFixed(2)}</td>
+          <td style="padding:2px 4px;border-bottom:1px solid #ddd;text-align:center;font-size:8px;">${displayVat}%</td>
+          <td style="padding:2px 4px;border-bottom:1px solid #ddd;text-align:right;font-size:8px;font-weight:600;">€${lineTotal.toFixed(2)}</td>
         </tr>`;
       }).join("");
 
-      return `<div style="margin-bottom:6px;">
-        <div style="font-size:8px;font-weight:700;color:#b45309;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;">${section}</div>
+      return `<div style="margin-bottom:8px;">
+        <div style="font-size:9px;font-weight:700;color:#b45309;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #b45309;padding-bottom:1px;">${section}</div>
         <table style="width:100%;border-collapse:collapse;">
-          <thead><tr style="background:#f5f5f5;">${headers}</tr></thead>
+          <thead><tr style="background:#f5f5f5;">
+            <th style="padding:2px 4px;font-size:7px;text-align:center;">✓</th>
+            <th style="padding:2px 4px;font-size:7px;text-align:left;">Produto</th>
+            <th style="padding:2px 4px;font-size:7px;text-align:center;">Qtd Pedida</th>
+            <th style="padding:2px 4px;font-size:7px;text-align:center;">Qtd Real</th>
+            <th style="padding:2px 4px;font-size:7px;text-align:center;">Preço Un.</th>
+            <th style="padding:2px 4px;font-size:7px;text-align:center;">IVA</th>
+            <th style="padding:2px 4px;font-size:7px;text-align:right;">Total</th>
+          </tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>`;
@@ -248,19 +242,19 @@ export default function Pedidos() {
 
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Pedido ${(order as any).store_name}</title>
       <style>
-        @page { size:A4; margin:8mm; }
+        @page { size:A4; margin:10mm; }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Segoe UI',Arial,sans-serif; padding:8px; color:#333; font-size:8px; }
+        body { font-family:'Segoe UI',Arial,sans-serif; padding:10px; color:#333; font-size:9px; }
       </style></head>
       <body>
-        <div style="text-align:center;margin-bottom:8px;">
+        <div style="text-align:center;margin-bottom:10px;">
           <div style="font-size:14px;font-weight:800;letter-spacing:2px;">LOST WIND CHURRASQUEIRA</div>
-          <div style="font-size:9px;color:#666;">Lista de Conferência — ${(order as any).store_name}</div>
-          <div style="font-size:7px;color:#999;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" })} · Pedido ${(order as any).id.slice(0, 8).toUpperCase()}</div>
+          <div style="font-size:10px;color:#666;">Lista de Conferência — ${(order as any).store_name}</div>
+          <div style="font-size:8px;color:#999;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" })} · Pedido ${(order as any).id.slice(0, 8).toUpperCase()} · Estado: ${ORDER_STATUS_LABELS[(order as any).status as OrderStatus]}</div>
         </div>
         ${sectionsHtml}
-        ${showActuals ? `<div style="text-align:right;font-size:10px;font-weight:700;margin-top:6px;padding-top:4px;border-top:2px solid #333;">Total c/ IVA: €${totalWithVat.toFixed(2)}</div>` : ""}
-        ${(order as any).notes ? `<p style="margin-top:4px;font-size:7px;"><strong>Notas:</strong> ${(order as any).notes}</p>` : ""}
+        <div style="text-align:right;font-size:11px;font-weight:700;margin-top:8px;padding-top:6px;border-top:2px solid #333;">Total c/ IVA: €${totalWithVat.toFixed(2)}</div>
+        ${(order as any).notes ? `<p style="margin-top:6px;font-size:8px;"><strong>Notas:</strong> ${(order as any).notes}</p>` : ""}
         <script>window.onload=function(){window.print();}<\/script>
       </body></html>`);
     printWindow.document.close();
