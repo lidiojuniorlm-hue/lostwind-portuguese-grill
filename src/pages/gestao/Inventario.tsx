@@ -18,7 +18,7 @@ export default function Inventario() {
   const [search, setSearch] = useState("");
   const [filterSection, setFilterSection] = useState<string>("todas");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState<{ stock: number; section: string; unit: string }>({ stock: 0, section: "", unit: "" });
+  const [editValues, setEditValues] = useState<{ name: string; stock: number; section: string; unit: string; unit_price: number; vat_rate: number }>({ name: "", stock: 0, section: "", unit: "", unit_price: 0, vat_rate: 23 });
 
   const stockData = useMemo(() => {
     const invMap: Record<string, number> = {};
@@ -53,15 +53,18 @@ export default function Inventario() {
 
   const startEdit = (p: any) => {
     setEditingId(p.id);
-    setEditValues({ stock: p.currentStock, section: p.section, unit: p.unit });
+    setEditValues({ name: p.name, stock: p.currentStock, section: p.section, unit: p.unit, unit_price: Number(p.unit_price), vat_rate: Number(p.vat_rate) });
   };
 
   const saveEdit = async (id: string) => {
     try {
       await updateProduct.mutateAsync({
         id,
+        name: editValues.name,
         section: editValues.section as any,
         unit: editValues.unit,
+        unit_price: editValues.unit_price,
+        vat_rate: editValues.vat_rate,
       });
       await upsertInventory.mutateAsync({
         product_id: id,
@@ -105,6 +108,8 @@ export default function Inventario() {
             <th className="text-left py-3 px-4">Produto</th>
             <th className="text-left py-3 px-4">Secção</th>
             <th className="text-center py-3 px-4">Unidade</th>
+            <th className="text-center py-3 px-4">Preço Un.</th>
+            <th className="text-center py-3 px-4">IVA</th>
             <th className="text-center py-3 px-4">Stock</th>
             <th className="text-center py-3 px-4">Pendente</th>
             <th className="text-center py-3 px-4">Entregue</th>
@@ -115,7 +120,11 @@ export default function Inventario() {
           <tbody>
             {filtered.map((p: any) => (
               <tr key={p.id} className="border-b border-border/50 hover:bg-secondary/30">
-                <td className="py-3 px-4 text-foreground font-medium">{p.name}</td>
+                <td className="py-3 px-4 text-foreground font-medium">
+                  {editingId === p.id ? (
+                    <Input value={editValues.name} onChange={e => setEditValues(v => ({ ...v, name: e.target.value }))} className="h-7 text-xs w-full min-w-[120px]" />
+                  ) : p.name}
+                </td>
                 <td className="py-3 px-4 text-muted-foreground">
                   {editingId === p.id ? (
                     <select value={editValues.section} onChange={e => setEditValues(v => ({ ...v, section: e.target.value }))} className="text-xs px-2 py-1 rounded border border-border bg-background text-foreground w-full">
@@ -127,6 +136,16 @@ export default function Inventario() {
                   {editingId === p.id ? (
                     <Input value={editValues.unit} onChange={e => setEditValues(v => ({ ...v, unit: e.target.value }))} className="w-16 h-7 text-xs text-center mx-auto" />
                   ) : p.unit}
+                </td>
+                <td className="py-3 px-4 text-center text-foreground">
+                  {editingId === p.id ? (
+                    <Input type="number" step="0.01" value={editValues.unit_price} onChange={e => setEditValues(v => ({ ...v, unit_price: parseFloat(e.target.value) || 0 }))} className="w-20 h-7 text-xs text-center mx-auto" />
+                  ) : `€${Number(p.unit_price).toFixed(2)}`}
+                </td>
+                <td className="py-3 px-4 text-center text-muted-foreground">
+                  {editingId === p.id ? (
+                    <Input type="number" step="1" value={editValues.vat_rate} onChange={e => setEditValues(v => ({ ...v, vat_rate: parseFloat(e.target.value) || 0 }))} className="w-16 h-7 text-xs text-center mx-auto" />
+                  ) : `${p.vat_rate}%`}
                 </td>
                 <td className="py-3 px-4 text-center text-foreground font-medium">
                   {editingId === p.id ? (

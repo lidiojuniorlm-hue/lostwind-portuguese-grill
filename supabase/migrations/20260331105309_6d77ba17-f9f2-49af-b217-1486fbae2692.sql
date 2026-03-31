@@ -1,0 +1,1 @@
+ALTER TYPE public.product_section ADD VALUE IF NOT EXISTS 'Limpeza';

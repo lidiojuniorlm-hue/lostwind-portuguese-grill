@@ -6,15 +6,19 @@ import { SECTIONS } from "@/types/warehouse";
 import { Euro, TrendingUp, Receipt, Percent, Calendar } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, Legend } from "recharts";
 
-const CHART_COLORS = ["hsl(0,78%,50%)", "hsl(25,95%,53%)", "hsl(40,100%,60%)", "hsl(200,70%,50%)", "hsl(150,60%,45%)"];
+const CHART_COLORS = ["hsl(0,78%,50%)", "hsl(25,95%,53%)", "hsl(40,100%,60%)", "hsl(200,70%,50%)", "hsl(150,60%,45%)", "hsl(280,60%,55%)"];
 
 export default function Financeiro() {
   const { user } = useAuth();
   const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
-  const [period, setPeriod] = useState<"7d" | "30d" | "90d" | "all">("30d");
+  const [period, setPeriod] = useState<"hoje" | "7d" | "30d" | "90d" | "all">("30d");
 
   const filteredOrders = useMemo(() => {
     if (period === "all") return orders;
+    if (period === "hoje") {
+      const today = new Date().toLocaleDateString("pt-PT");
+      return orders.filter((o: any) => new Date(o.created_at).toLocaleDateString("pt-PT") === today);
+    }
     const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
@@ -76,9 +80,9 @@ export default function Financeiro() {
 
       <div className="flex items-center gap-2">
         <Calendar className="w-4 h-4 text-muted-foreground" />
-        {(["7d", "30d", "90d", "all"] as const).map(p => (
+        {(["hoje", "7d", "30d", "90d", "all"] as const).map(p => (
           <button key={p} onClick={() => setPeriod(p)} className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${period === p ? "bg-primary/20 border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
-            {p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : p === "90d" ? "90 dias" : "Tudo"}
+            {p === "hoje" ? "Hoje" : p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : p === "90d" ? "90 dias" : "Tudo"}
           </button>
         ))}
       </div>
