@@ -276,7 +276,7 @@ export default function Pedidos() {
           <div>Pedido ${(order as any).store_name}</div>
         </div>
         <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px;">
-          <img src="${logoUrl}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
+          <img src="${logoBase64}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
           <div style="text-align:center;">
             <div style="font-size:20px;font-weight:800;color:#000;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;">Lost Wind Churrasqueira</div>
             <div style="font-size:12px;color:#555;margin-top:2px;">Pedido de Stock — ${(order as any).store_name}</div>
