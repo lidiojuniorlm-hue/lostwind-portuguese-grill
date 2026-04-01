@@ -2,9 +2,13 @@ import { useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrders } from "@/hooks/useSupabaseData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { SECTIONS } from "@/types/warehouse";
-import { Euro, TrendingUp, Receipt, Percent, Calendar } from "lucide-react";
+import { Euro, TrendingUp, Receipt, Percent, Calendar, FileDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, Legend } from "recharts";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import { createPDFHeader, addPDFFooter } from "@/utils/pdfHelpers";
 
 const CHART_COLORS = ["hsl(0,78%,50%)", "hsl(25,95%,53%)", "hsl(40,100%,60%)", "hsl(200,70%,50%)", "hsl(150,60%,45%)", "hsl(280,60%,55%)"];
 
