@@ -75,11 +75,103 @@ export default function Financeiro() {
     }));
   }, [filteredOrders]);
 
+  const handleExportPDF = async () => {
+    const doc = new jsPDF();
+    const periodLabel = period === "hoje" ? "Hoje" : period === "7d" ? "7 dias" : period === "30d" ? "30 dias" : period === "90d" ? "90 dias" : "Tudo";
+    let y = await createPDFHeader(doc, "Relatório Financeiro", `Período: ${periodLabel}`);
+
+    // KPIs
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Resumo Financeiro", 14, y);
+    y += 6;
+
+    (doc as any).autoTable({
+      startY: y,
+      head: [["Subtotal", "IVA Total", "Total c/ IVA", "Média/Pedido"]],
+      body: [[`€${totals.subtotal.toFixed(2)}`, `€${totals.vat.toFixed(2)}`, `€${totals.total.toFixed(2)}`, `€${totals.avgOrder.toFixed(2)}`]],
+      theme: "grid",
+      headStyles: { fillColor: [196, 57, 43], fontSize: 8, halign: "center" },
+      bodyStyles: { fontSize: 9, halign: "center", fontStyle: "bold" },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    // VAT breakdown
+    if (vatBreakdown.length > 0) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Discriminação de IVA", 14, y);
+      y += 4;
+
+      (doc as any).autoTable({
+        startY: y,
+        head: [["Taxa", "Base Tributável", "IVA", "Total"]],
+        body: [
+          ...vatBreakdown.map(r => [r.rate, `€${r.base.toFixed(2)}`, `€${r.vat.toFixed(2)}`, `€${r.total.toFixed(2)}`]),
+          [{ content: "Total", styles: { fontStyle: "bold" } }, `€${totals.subtotal.toFixed(2)}`, `€${totals.vat.toFixed(2)}`, `€${totals.total.toFixed(2)}`],
+        ],
+        theme: "striped",
+        headStyles: { fillColor: [196, 57, 43], fontSize: 8 },
+        bodyStyles: { fontSize: 8 },
+        columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" } },
+        margin: { left: 14, right: 14 },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // By section
+    if (bySection.length > 0) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Faturação por Secção", 14, y);
+      y += 4;
+
+      (doc as any).autoTable({
+        startY: y,
+        head: [["Secção", "Total c/ IVA"]],
+        body: bySection.map(s => [s.name, `€${s.value.toFixed(2)}`]),
+        theme: "striped",
+        headStyles: { fillColor: [196, 57, 43], fontSize: 8 },
+        bodyStyles: { fontSize: 8 },
+        columnStyles: { 1: { halign: "right" } },
+        margin: { left: 14, right: 14 },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Monthly revenue
+    if (monthlyRevenue.length > 0) {
+      if (y > 220) { doc.addPage(); y = 20; }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Evolução Mensal", 14, y);
+      y += 4;
+
+      (doc as any).autoTable({
+        startY: y,
+        head: [["Mês", "Subtotal", "IVA", "Total"]],
+        body: monthlyRevenue.map(m => [m.month, `€${m.subtotal.toFixed(2)}`, `€${m.vat.toFixed(2)}`, `€${m.total.toFixed(2)}`]),
+        theme: "striped",
+        headStyles: { fillColor: [196, 57, 43], fontSize: 8 },
+        bodyStyles: { fontSize: 8 },
+        columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" } },
+        margin: { left: 14, right: 14 },
+      });
+    }
+
+    addPDFFooter(doc);
+    doc.save(`financeiro-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-heading text-foreground">Financeiro</h2>
-        <p className="text-sm text-muted-foreground">Resumo financeiro, IVA e faturação</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-2xl font-heading text-foreground">Financeiro</h2>
+          <p className="text-sm text-muted-foreground">Resumo financeiro, IVA e faturação</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleExportPDF}><FileDown className="w-4 h-4 mr-1" /> PDF</Button>
       </div>
 
       <div className="flex items-center gap-2">
