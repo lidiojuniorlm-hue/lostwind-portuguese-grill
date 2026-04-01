@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, OrderStatus, SECTIONS } from "@/types/warehouse";
 import { ChevronDown, ChevronUp, Printer, FileText, Save, History, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
+import { getLogoBase64 } from "@/utils/logoBase64";
 
 interface EditItem {
   id: string;
