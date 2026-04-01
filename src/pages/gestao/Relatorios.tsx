@@ -236,6 +236,7 @@ export default function Relatorios() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div><h2 className="text-2xl font-heading text-foreground tracking-wide">Relatórios</h2><p className="text-sm text-muted-foreground font-normal">Análise completa de movimentações e desempenho</p></div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportPDF}><FileDown className="w-4 h-4 mr-1" /> PDF</Button>
           <Button variant="outline" size="sm" onClick={handleExportCSV}><Download className="w-4 h-4 mr-1" /> CSV</Button>
         </div>
       </div>
