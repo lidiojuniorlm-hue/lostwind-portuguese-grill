@@ -302,6 +302,17 @@ export default function Pedidos() {
         <p className="text-sm text-muted-foreground">{user.role === "funcionario" ? "Os seus pedidos" : "Todos os pedidos das lojas"}</p>
       </div>
 
+      <div className="flex items-center gap-3">
+        <button onClick={() => setViewMode("hoje")} className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg border transition-all font-medium ${viewMode === "hoje" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+          <CalendarDays className="w-4 h-4" /> Hoje
+          <span className="ml-1 text-xs opacity-80">({todayOrders.length})</span>
+        </button>
+        <button onClick={() => setViewMode("historico")} className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg border transition-all font-medium ${viewMode === "historico" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+          <History className="w-4 h-4" /> Histórico
+          <span className="ml-1 text-xs opacity-80">({historicOrders.length})</span>
+        </button>
+      </div>
+
       <div className="flex flex-wrap gap-2">
         {(["todos", "pendente", "em_preparacao", "pronto", "entregue", "cancelado"] as const).map((s) => (
           <button key={s} onClick={() => setFilterStatus(s)} className={`text-xs px-3 py-2 rounded-lg border transition-all ${filterStatus === s ? "bg-primary/20 border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
@@ -312,9 +323,12 @@ export default function Pedidos() {
       </div>
 
       {sortedOrders.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-12">Nenhum pedido encontrado</p>
+        <p className="text-sm text-muted-foreground text-center py-12">{viewMode === "hoje" ? "Nenhum pedido hoje" : "Nenhum pedido no histórico"}</p>
       ) : (
         <div className="space-y-3">
+          {viewMode === "historico" && (
+            <p className="text-xs text-muted-foreground">Pedidos anteriores a hoje</p>
+          )}
           {sortedOrders.map((order: any) => {
             const expanded = expandedOrder === order.id;
             const isEditing = !!editingItems[order.id];
