@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrders, useOrderMutations, useUsers, useLogActivity } from "@/hooks/useSupabaseData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, OrderStatus, SECTIONS } from "@/types/warehouse";
-import { ChevronDown, ChevronUp, Printer, FileText, Save } from "lucide-react";
+import { ChevronDown, ChevronUp, Printer, FileText, Save, History, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 
 interface EditItem {
