@@ -194,19 +194,14 @@ export default function Pedidos() {
 
     const financialSummary = showReadyValues
       ? items.reduce(
-          (acc: { subtotal: number; vat: number; total: number }, item: any) => {
+          (acc: { total: number }, item: any) => {
             const qty = Number(item.actual_qty ?? item.qty);
             const price = Number(item.actual_price ?? item.unit_price);
             const vatRate = Number(item.actual_vat ?? item.vat_rate);
-            const subtotal = qty * price;
-            const vat = subtotal * (vatRate / 100);
-
-            acc.subtotal += subtotal;
-            acc.vat += vat;
-            acc.total += subtotal + vat;
+            acc.total += qty * price * (1 + vatRate / 100);
             return acc;
           },
-          { subtotal: 0, vat: 0, total: 0 },
+          { total: 0 },
         )
       : null;
 
