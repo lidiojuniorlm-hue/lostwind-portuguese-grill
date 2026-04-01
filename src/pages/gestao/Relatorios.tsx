@@ -4,8 +4,11 @@ import { useOrders, useProducts } from "@/hooks/useSupabaseData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SECTIONS, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, type OrderStatus } from "@/types/warehouse";
-import { TrendingUp, Package, ShoppingCart, Euro, Printer, Calendar, Store, BarChart3, ArrowUpRight, ArrowDownRight, Download } from "lucide-react";
+import { TrendingUp, Package, ShoppingCart, Euro, Calendar, Store, BarChart3, Download, FileDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, AreaChart, Area } from "recharts";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import { createPDFHeader, addPDFFooter } from "@/utils/pdfHelpers";
 
 const CHART_COLORS = ["hsl(0,78%,50%)", "hsl(25,95%,53%)", "hsl(40,100%,60%)", "hsl(200,70%,50%)", "hsl(150,60%,45%)", "hsl(280,60%,55%)"];
 
@@ -126,11 +129,114 @@ export default function Relatorios() {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportPDF = async () => {
+    const doc = new jsPDF();
+    const periodLabel = period === "hoje" ? "Hoje" : period === "7d" ? "7 dias" : period === "30d" ? "30 dias" : period === "90d" ? "90 dias" : "Tudo";
+    let y = await createPDFHeader(doc, "Relatório de Movimentações", `Período: ${periodLabel} ${selectedStore !== "todas" ? `· Loja: ${selectedStore}` : "· Todas as lojas"}`);
+
+    // KPIs
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Resumo Geral", 14, y);
+    y += 6;
+
+    const kpis = [
+      ["Pedidos", totalOrders.toString()],
+      ["Itens", totalItems.toString()],
+      ["Total c/ IVA", `€${totalValue.toFixed(2)}`],
+      ["Média/Pedido", `€${avgOrderValue.toFixed(2)}`],
+      ["Taxa Entrega", `${fulfillmentRate}%`],
+      ["Cancelamentos", `${cancelRate}%`],
+    ];
+
+    (doc as any).autoTable({
+      startY: y,
+      head: [kpis.map(k => k[0])],
+      body: [kpis.map(k => k[1])],
+      theme: "grid",
+      headStyles: { fillColor: [196, 57, 43], fontSize: 8, halign: "center" },
+      bodyStyles: { fontSize: 9, halign: "center", fontStyle: "bold" },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Section breakdown table
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Faturação por Secção", 14, y);
+    y += 4;
+
+    const sectionRows = SECTIONS.map(s => [
+      s,
+      bySection[s].qty.toString(),
+      `€${bySection[s].total.toFixed(2)}`,
+      `€${bySection[s].vat.toFixed(2)}`,
+      `€${(bySection[s].total + bySection[s].vat).toFixed(2)}`,
+    ]).filter(r => r[1] !== "0");
+
+    (doc as any).autoTable({
+      startY: y,
+      head: [["Secção", "Qtd", "Subtotal", "IVA", "Total"]],
+      body: sectionRows,
+      theme: "striped",
+      headStyles: { fillColor: [196, 57, 43], fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Top products
+    if (topProducts.length > 0) {
+      if (y > 230) { doc.addPage(); y = 20; }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Top 10 Produtos", 14, y);
+      y += 4;
+
+      (doc as any).autoTable({
+        startY: y,
+        head: [["#", "Produto", "Secção", "Qtd", "Total"]],
+        body: topProducts.map((p, i) => [i + 1, p.name, p.section, p.qty, `€${p.total.toFixed(2)}`]),
+        theme: "striped",
+        headStyles: { fillColor: [196, 57, 43], fontSize: 8 },
+        bodyStyles: { fontSize: 8 },
+        columnStyles: { 0: { halign: "center", cellWidth: 12 }, 3: { halign: "center" }, 4: { halign: "right" } },
+        margin: { left: 14, right: 14 },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Store breakdown
+    if (byStore.length > 0) {
+      if (y > 230) { doc.addPage(); y = 20; }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Faturação por Loja", 14, y);
+      y += 4;
+
+      (doc as any).autoTable({
+        startY: y,
+        head: [["Loja", "Pedidos", "Itens", "Subtotal", "IVA", "Total"]],
+        body: byStore.map(([name, d]) => [name, d.count, d.items, `€${d.total.toFixed(2)}`, `€${d.vat.toFixed(2)}`, `€${(d.total + d.vat).toFixed(2)}`]),
+        theme: "striped",
+        headStyles: { fillColor: [196, 57, 43], fontSize: 8 },
+        bodyStyles: { fontSize: 8 },
+        columnStyles: { 1: { halign: "center" }, 2: { halign: "center" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } },
+        margin: { left: 14, right: 14 },
+      });
+    }
+
+    addPDFFooter(doc);
+    doc.save(`relatorio-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div><h2 className="text-2xl font-heading text-foreground tracking-wide">Relatórios</h2><p className="text-sm text-muted-foreground font-normal">Análise completa de movimentações e desempenho</p></div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportPDF}><FileDown className="w-4 h-4 mr-1" /> PDF</Button>
           <Button variant="outline" size="sm" onClick={handleExportCSV}><Download className="w-4 h-4 mr-1" /> CSV</Button>
         </div>
       </div>

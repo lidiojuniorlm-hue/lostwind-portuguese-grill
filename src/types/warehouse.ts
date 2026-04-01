@@ -1,6 +1,6 @@
-export type Section = "Carnes" | "Secos e Molhados" | "Peixes" | "Embalagens" | "Bebidas" | "Limpeza";
+export type Section = "Carnes" | "Secos e Molhados" | "Peixes" | "Embalagens" | "Bebidas" | "Limpeza" | "Hortifrúti";
 
-export const SECTIONS: Section[] = ["Carnes", "Secos e Molhados", "Peixes", "Embalagens", "Bebidas", "Limpeza"];
+export const SECTIONS: Section[] = ["Carnes", "Secos e Molhados", "Peixes", "Embalagens", "Bebidas", "Limpeza", "Hortifrúti"];
 
 export type VatRate = 6 | 13 | 23;
 

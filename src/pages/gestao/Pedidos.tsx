@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, OrderStatus, SECTIONS } from "@/types/warehouse";
 import { ChevronDown, ChevronUp, Printer, FileText, Save, History, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
+import { getLogoBase64 } from "@/utils/logoBase64";
 
 interface EditItem {
   id: string;
@@ -187,7 +188,7 @@ export default function Pedidos() {
   };
 
   // Print: Conference sheet based on the original layout
-  const handlePrint = (orderId: string) => {
+  const handlePrint = async (orderId: string) => {
     const order = orders.find((o: any) => o.id === orderId);
     if (!order) return;
     const printWindow = window.open("", "_blank");
@@ -215,8 +216,7 @@ export default function Pedidos() {
         )
       : null;
 
-    // Get logo as base64 for print
-    const logoUrl = new URL("/src/assets/logo-lostwind.jpeg", window.location.origin).href;
+    const logoBase64 = await getLogoBase64();
 
     const sectionsHtml = SECTIONS.filter((s) => items.some((i: any) => i.section === s)).map((section) => {
       const sectionItems = items.filter((i: any) => i.section === section);
@@ -276,7 +276,7 @@ export default function Pedidos() {
           <div>Pedido ${(order as any).store_name}</div>
         </div>
         <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px;">
-          <img src="${logoUrl}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
+          <img src="${logoBase64}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
           <div style="text-align:center;">
             <div style="font-size:20px;font-weight:800;color:#000;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;">Lost Wind Churrasqueira</div>
             <div style="font-size:12px;color:#555;margin-top:2px;">Pedido de Stock — ${(order as any).store_name}</div>
