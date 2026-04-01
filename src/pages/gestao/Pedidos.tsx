@@ -194,21 +194,19 @@ export default function Pedidos() {
 
     const financialSummary = showReadyValues
       ? items.reduce(
-          (acc: { subtotal: number; vat: number; total: number }, item: any) => {
+          (acc: { total: number }, item: any) => {
             const qty = Number(item.actual_qty ?? item.qty);
             const price = Number(item.actual_price ?? item.unit_price);
             const vatRate = Number(item.actual_vat ?? item.vat_rate);
-            const subtotal = qty * price;
-            const vat = subtotal * (vatRate / 100);
-
-            acc.subtotal += subtotal;
-            acc.vat += vat;
-            acc.total += subtotal + vat;
+            acc.total += qty * price * (1 + vatRate / 100);
             return acc;
           },
-          { subtotal: 0, vat: 0, total: 0 },
+          { total: 0 },
         )
       : null;
+
+    // Get logo as base64 for print
+    const logoUrl = new URL("/src/assets/logo-lostwind.jpeg", window.location.origin).href;
 
     const sectionsHtml = SECTIONS.filter((s) => items.some((i: any) => i.section === s)).map((section) => {
       const sectionItems = items.filter((i: any) => i.section === section);
@@ -218,26 +216,38 @@ export default function Pedidos() {
         const actualQty = `${formatQty(Number(item.actual_qty ?? item.qty))} ${item.unit}`;
         const realQtyContent = showReadyValues
           ? `<span style="font-weight:600;color:#2f2f2f;">${actualQty}</span>`
-          : `<span style="display:inline-block;width:92px;border-bottom:1px solid #7a7a7a;height:12px;"></span>`;
+          : `<span style="display:inline-block;width:92px;border-bottom:1px solid #7a7a7a;height:14px;"></span>`;
+
+        // Price with VAT included per item (only for ready/delivered)
+        const priceWithVat = showReadyValues
+          ? (() => {
+              const qty = Number(item.actual_qty ?? item.qty);
+              const price = Number(item.actual_price ?? item.unit_price);
+              const vatRate = Number(item.actual_vat ?? item.vat_rate);
+              return (qty * price * (1 + vatRate / 100)).toFixed(2);
+            })()
+          : null;
 
         return `<tr>
-          <td style="padding:8px 10px;border:1px solid #d7d7d7;text-align:center;width:52px;">
-            <div style="width:18px;height:18px;border:2px solid #666;border-radius:4px;display:inline-block;"></div>
+          <td style="padding:5px 8px;border:1px solid #d7d7d7;text-align:center;width:40px;">
+            <div style="width:16px;height:16px;border:2px solid #666;border-radius:3px;display:inline-block;"></div>
           </td>
-          <td style="padding:8px 16px;border:1px solid #d7d7d7;font-size:11px;color:#3a3a3a;">${item.product_name}</td>
-          <td style="padding:8px 12px;border:1px solid #d7d7d7;text-align:center;font-size:11px;color:#3a3a3a;">${orderedQty}</td>
-          <td style="padding:8px 12px;border:1px solid #d7d7d7;text-align:center;font-size:11px;color:#3a3a3a;">${realQtyContent}</td>
+          <td style="padding:5px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;">${item.product_name}</td>
+          <td style="padding:5px 8px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${orderedQty}</td>
+          <td style="padding:5px 8px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${realQtyContent}</td>
+          ${showReadyValues ? `<td style="padding:5px 8px;border:1px solid #d7d7d7;text-align:right;font-size:12px;font-weight:600;color:#2a2a2a;">€${priceWithVat}</td>` : ""}
         </tr>`;
       }).join("");
 
-      return `<div style="margin-bottom:14px;">
-        <div style="font-size:12px;font-weight:700;color:#b45309;margin-bottom:5px;">${section}</div>
+      return `<div style="margin-bottom:6px;">
+        <div style="font-size:12px;font-weight:700;color:#b45309;margin-bottom:3px;padding-left:2px;">${section}</div>
         <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-          <thead><tr style="background:#fafafa;">
-            <th style="padding:6px 8px;font-size:10px;text-align:center;border:1px solid #d7d7d7;width:52px;">✓</th>
-            <th style="padding:6px 12px;font-size:10px;text-align:left;border:1px solid #d7d7d7;">Produto</th>
-            <th style="padding:6px 12px;font-size:10px;text-align:center;border:1px solid #d7d7d7;width:120px;">Qtd Pedida</th>
-            <th style="padding:6px 12px;font-size:10px;text-align:center;border:1px solid #d7d7d7;width:150px;">Qtd Real / Peso</th>
+          <thead><tr style="background:#f5f5f5;">
+            <th style="padding:4px 6px;font-size:10px;text-align:center;border:1px solid #d7d7d7;width:40px;">✓</th>
+            <th style="padding:4px 8px;font-size:10px;text-align:left;border:1px solid #d7d7d7;">Produto</th>
+            <th style="padding:4px 8px;font-size:10px;text-align:center;border:1px solid #d7d7d7;width:110px;">Qtd Pedida</th>
+            <th style="padding:4px 8px;font-size:10px;text-align:center;border:1px solid #d7d7d7;width:130px;">Qtd Real / Peso</th>
+            ${showReadyValues ? `<th style="padding:4px 8px;font-size:10px;text-align:right;border:1px solid #d7d7d7;width:100px;">Total c/ IVA</th>` : ""}
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
@@ -246,29 +256,28 @@ export default function Pedidos() {
 
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Pedido ${(order as any).store_name}</title>
       <style>
-        @page { size:A4; margin:10mm; }
+        @page { size:A4; margin:8mm; }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Inter','Helvetica Neue',Arial,sans-serif; padding:14px 18px; color:#333; font-size:12px; }
+        body { font-family:'Arial','Helvetica Neue',sans-serif; padding:12px 16px; color:#333; font-size:12px; }
       </style></head>
       <body>
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;font-size:10px;color:#222;margin-bottom:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#555;margin-bottom:12px;">
           <div>${printedAt.toLocaleDateString("pt-PT")} ${printedAt.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</div>
           <div>Pedido ${(order as any).store_name}</div>
         </div>
-        <div style="text-align:center;margin-bottom:18px;">
-          <div style="font-size:20px;font-weight:800;color:#1a1a1a;margin-bottom:5px;letter-spacing:0.5px;font-family:'Helvetica Neue','Inter',Arial,sans-serif;">Lost Wind Churrasqueira</div>
-          <div style="font-size:12px;color:#555;margin-bottom:3px;">Pedido de Stock — ${(order as any).store_name}</div>
-          <div style="font-size:11px;color:#666;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })} às ${new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} · Estado: ${ORDER_STATUS_LABELS[(order as any).status as OrderStatus]}</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px;">
+          <img src="${logoUrl}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
+          <div style="text-align:center;">
+            <div style="font-size:20px;font-weight:800;color:#000;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;">Lost Wind Churrasqueira</div>
+            <div style="font-size:12px;color:#555;margin-top:2px;">Pedido de Stock — ${(order as any).store_name}</div>
+          </div>
         </div>
-        <div style="font-size:10px;color:#555;margin:0 0 14px 8px;">📝 ${showReadyValues ? "Valores reais digitalizados após finalização do pedido" : "Qtd real / peso para preenchimento manual"}</div>
+        <div style="text-align:center;font-size:11px;color:#666;margin-bottom:10px;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })} às ${new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} · Estado: ${ORDER_STATUS_LABELS[(order as any).status as OrderStatus]}</div>
+        <div style="font-size:10px;color:#555;margin:0 0 8px 4px;">📝 ${showReadyValues ? "Valores reais digitalizados" : "Qtd real / peso para preenchimento manual"}</div>
         ${sectionsHtml}
         ${financialSummary ? `
-          <div style="margin-top:18px;border-top:2px solid #3f3f3f;padding-top:10px;display:flex;justify-content:flex-end;">
-            <div style="width:220px;">
-              <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:3px;"><span>Subtotal</span><span>€${financialSummary.subtotal.toFixed(2)}</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:3px;"><span>IVA</span><span>€${financialSummary.vat.toFixed(2)}</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:#333;"><span>Total</span><span>€${financialSummary.total.toFixed(2)}</span></div>
-            </div>
+          <div style="margin-top:10px;border-top:2px solid #333;padding-top:8px;display:flex;justify-content:flex-end;">
+            <div style="display:flex;justify-content:space-between;width:200px;font-size:14px;font-weight:800;color:#000;"><span>Total</span><span>€${financialSummary.total.toFixed(2)}</span></div>
           </div>` : ""}
         ${(order as any).notes ? `<p style="margin-top:6px;font-size:10px;"><strong>Notas:</strong> ${(order as any).notes}</p>` : ""}
         <script>window.onload=function(){window.print();}<\/script>
