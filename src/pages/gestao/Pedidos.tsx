@@ -31,6 +31,7 @@ export default function Pedidos() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<OrderStatus | "todos">("todos");
   const [editingItems, setEditingItems] = useState<Record<string, EditItem[]>>({});
+  const [viewMode, setViewMode] = useState<"hoje" | "historico">("hoje");
 
   if (!user) return null;
 
@@ -42,7 +43,16 @@ export default function Pedidos() {
     ? myOrders
     : myOrders.filter((o: any) => o.status === filterStatus);
 
-  const sortedOrders = [...filteredOrders].sort(
+  // Separate today's orders from historical
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const todayOrders = filteredOrders.filter((o: any) => new Date(o.created_at) >= today);
+  const historicOrders = filteredOrders.filter((o: any) => new Date(o.created_at) < today);
+
+  const activeOrders = viewMode === "hoje" ? todayOrders : historicOrders;
+
+  const sortedOrders = [...activeOrders].sort(
     (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
