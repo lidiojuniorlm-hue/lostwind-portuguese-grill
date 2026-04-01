@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrders, useOrderMutations, useUsers, useLogActivity } from "@/hooks/useSupabaseData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, OrderStatus, SECTIONS } from "@/types/warehouse";
-import { ChevronDown, ChevronUp, Printer, FileText, Save } from "lucide-react";
+import { ChevronDown, ChevronUp, Printer, FileText, Save, History, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 
 interface EditItem {
@@ -31,6 +31,7 @@ export default function Pedidos() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<OrderStatus | "todos">("todos");
   const [editingItems, setEditingItems] = useState<Record<string, EditItem[]>>({});
+  const [viewMode, setViewMode] = useState<"hoje" | "historico">("hoje");
 
   if (!user) return null;
 
@@ -42,7 +43,16 @@ export default function Pedidos() {
     ? myOrders
     : myOrders.filter((o: any) => o.status === filterStatus);
 
-  const sortedOrders = [...filteredOrders].sort(
+  // Separate today's orders from historical
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const todayOrders = filteredOrders.filter((o: any) => new Date(o.created_at) >= today);
+  const historicOrders = filteredOrders.filter((o: any) => new Date(o.created_at) < today);
+
+  const activeOrders = viewMode === "hoje" ? todayOrders : historicOrders;
+
+  const sortedOrders = [...activeOrders].sort(
     (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
@@ -292,6 +302,17 @@ export default function Pedidos() {
         <p className="text-sm text-muted-foreground">{user.role === "funcionario" ? "Os seus pedidos" : "Todos os pedidos das lojas"}</p>
       </div>
 
+      <div className="flex items-center gap-3">
+        <button onClick={() => setViewMode("hoje")} className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg border transition-all font-medium ${viewMode === "hoje" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+          <CalendarDays className="w-4 h-4" /> Hoje
+          <span className="ml-1 text-xs opacity-80">({todayOrders.length})</span>
+        </button>
+        <button onClick={() => setViewMode("historico")} className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg border transition-all font-medium ${viewMode === "historico" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+          <History className="w-4 h-4" /> Histórico
+          <span className="ml-1 text-xs opacity-80">({historicOrders.length})</span>
+        </button>
+      </div>
+
       <div className="flex flex-wrap gap-2">
         {(["todos", "pendente", "em_preparacao", "pronto", "entregue", "cancelado"] as const).map((s) => (
           <button key={s} onClick={() => setFilterStatus(s)} className={`text-xs px-3 py-2 rounded-lg border transition-all ${filterStatus === s ? "bg-primary/20 border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
@@ -302,9 +323,12 @@ export default function Pedidos() {
       </div>
 
       {sortedOrders.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-12">Nenhum pedido encontrado</p>
+        <p className="text-sm text-muted-foreground text-center py-12">{viewMode === "hoje" ? "Nenhum pedido hoje" : "Nenhum pedido no histórico"}</p>
       ) : (
         <div className="space-y-3">
+          {viewMode === "historico" && (
+            <p className="text-xs text-muted-foreground">Pedidos anteriores a hoje</p>
+          )}
           {sortedOrders.map((order: any) => {
             const expanded = expandedOrder === order.id;
             const isEditing = !!editingItems[order.id];
