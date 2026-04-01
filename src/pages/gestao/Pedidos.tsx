@@ -188,7 +188,7 @@ export default function Pedidos() {
   };
 
   // Print: Conference sheet based on the original layout
-  const handlePrint = (orderId: string) => {
+  const handlePrint = async (orderId: string) => {
     const order = orders.find((o: any) => o.id === orderId);
     if (!order) return;
     const printWindow = window.open("", "_blank");
@@ -216,8 +216,7 @@ export default function Pedidos() {
         )
       : null;
 
-    // Get logo as base64 for print
-    const logoUrl = new URL("/src/assets/logo-lostwind.jpeg", window.location.origin).href;
+    const logoBase64 = await getLogoBase64();
 
     const sectionsHtml = SECTIONS.filter((s) => items.some((i: any) => i.section === s)).map((section) => {
       const sectionItems = items.filter((i: any) => i.section === section);
