@@ -19,7 +19,7 @@ export async function createPDFHeader(doc: jsPDF, title: string, subtitle: strin
 
   // Logo
   if (logoBase64) {
-    doc.addImage(logoBase64, "JPEG", 14, 6, 26, 26, undefined, "FAST");
+    doc.addImage(logoBase64, "PNG", 14, 6, 26, 26, undefined, "FAST");
   }
 
   // Title
