@@ -48,7 +48,7 @@ export async function createPDFHeader(doc: jsPDF, title: string, subtitle: strin
 
 export function runPDFTable(doc: jsPDF, options: Parameters<typeof autoTable>[1]) {
   autoTable(doc, options);
-  return doc.lastAutoTable?.finalY ?? options.startY ?? 20;
+  return Number(doc.lastAutoTable?.finalY ?? options.startY ?? 20);
 }
 
 export function downloadPDF(doc: jsPDF, filename: string) {
