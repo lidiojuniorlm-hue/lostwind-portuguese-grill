@@ -7,8 +7,7 @@ import { SECTIONS } from "@/types/warehouse";
 import { Euro, TrendingUp, Receipt, Percent, Calendar, FileDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, Legend } from "recharts";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
-import { createPDFHeader, addPDFFooter } from "@/utils/pdfHelpers";
+import { createPDFHeader, addPDFFooter, runPDFTable, downloadPDF } from "@/utils/pdfHelpers";
 
 const CHART_COLORS = ["hsl(0,78%,50%)", "hsl(25,95%,53%)", "hsl(40,100%,60%)", "hsl(200,70%,50%)", "hsl(150,60%,45%)", "hsl(280,60%,55%)", "hsl(90,60%,45%)"];
 
