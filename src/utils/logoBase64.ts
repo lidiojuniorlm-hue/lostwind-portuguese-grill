@@ -13,7 +13,7 @@ export async function getLogoBase64(): Promise<string> {
       canvas.height = img.naturalHeight;
       const ctx = canvas.getContext("2d");
       ctx?.drawImage(img, 0, 0);
-      cachedBase64 = canvas.toDataURL("image/jpeg", 0.9);
+      cachedBase64 = canvas.toDataURL("image/png", 0.9);
       resolve(cachedBase64);
     };
     img.onerror = () => resolve("");
