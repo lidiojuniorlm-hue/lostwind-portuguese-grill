@@ -2,7 +2,7 @@ import { LayoutDashboard, ShoppingCart, ClipboardList, Package, Users, LogOut, B
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import logo from "@/assets/logo-lostwind.jpeg";
+import logo from "@/assets/logo-gestao.png";
 import {
   Sidebar,
   SidebarContent,

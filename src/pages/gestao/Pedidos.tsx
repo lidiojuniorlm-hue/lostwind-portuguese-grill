@@ -187,14 +187,15 @@ export default function Pedidos() {
     printWindow.document.close();
   };
 
-  // Print: Conference sheet based on the original layout
+  // Print: Conference sheet — keep original order, group by section, separate qty from unit
   const handlePrint = async (orderId: string) => {
     const order = orders.find((o: any) => o.id === orderId);
     if (!order) return;
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const items = ((order as any).items || []).sort((a: any, b: any) => a.product_name.localeCompare(b.product_name));
+    // Keep items in their ORIGINAL order (as submitted), do NOT sort alphabetically
+    const items = (order as any).items || [];
     const showReadyValues = (order as any).status === "pronto" || (order as any).status === "entregue";
     const printedAt = new Date();
 
@@ -219,16 +220,19 @@ export default function Pedidos() {
     const logoBase64 = await getLogoBase64();
 
     const sectionsHtml = SECTIONS.filter((s) => items.some((i: any) => i.section === s)).map((section) => {
+      // Keep items in original order within each section
       const sectionItems = items.filter((i: any) => i.section === section);
 
       const rows = sectionItems.map((item: any) => {
-        const orderedQty = `${formatQty(Number(item.qty))} ${item.unit}`;
-        const actualQty = `${formatQty(Number(item.actual_qty ?? item.qty))} ${item.unit}`;
+        const qtyValue = formatQty(Number(item.qty));
+        const unitLabel = item.unit;
+        const actualQtyValue = formatQty(Number(item.actual_qty ?? item.qty));
+        const actualUnitLabel = item.unit;
+
         const realQtyContent = showReadyValues
-          ? `<span style="font-weight:600;color:#2f2f2f;">${actualQty}</span>`
+          ? `<span style="font-weight:600;color:#2f2f2f;">${actualQtyValue}</span><span style="display:inline-block;width:6px;"></span><span style="font-size:10px;color:#666;">${actualUnitLabel}</span>`
           : `<span style="display:inline-block;width:92px;border-bottom:1px solid #7a7a7a;height:14px;"></span>`;
 
-        // Price with VAT included per item (only for ready/delivered)
         const priceWithVat = showReadyValues
           ? (() => {
               const qty = Number(item.actual_qty ?? item.qty);
@@ -239,25 +243,27 @@ export default function Pedidos() {
           : null;
 
         return `<tr>
-          <td style="padding:5px 8px;border:1px solid #d7d7d7;text-align:center;width:40px;">
+          <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;width:40px;">
             <div style="width:16px;height:16px;border:2px solid #666;border-radius:3px;display:inline-block;"></div>
           </td>
-          <td style="padding:5px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;">${item.product_name}</td>
-          <td style="padding:5px 8px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${orderedQty}</td>
-          <td style="padding:5px 8px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${realQtyContent}</td>
-          ${showReadyValues ? `<td style="padding:5px 8px;border:1px solid #d7d7d7;text-align:right;font-size:12px;font-weight:600;color:#2a2a2a;">€${priceWithVat}</td>` : ""}
+          <td style="padding:6px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;font-weight:500;">${item.product_name}</td>
+          <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:13px;color:#2a2a2a;font-weight:700;">${qtyValue}</td>
+          <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:10px;color:#666;">${unitLabel}</td>
+          <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${realQtyContent}</td>
+          ${showReadyValues ? `<td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:right;font-size:12px;font-weight:600;color:#2a2a2a;">€${priceWithVat}</td>` : ""}
         </tr>`;
       }).join("");
 
-      return `<div style="margin-bottom:6px;">
-        <div style="font-size:12px;font-weight:700;color:#b45309;margin-bottom:3px;padding-left:2px;">${section}</div>
+      return `<div style="margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:700;color:#c0392b;margin-bottom:4px;padding:4px 8px;background:#fef2f2;border-left:3px solid #c0392b;border-radius:2px;">${section}</div>
         <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
           <thead><tr style="background:#f5f5f5;">
-            <th style="padding:4px 6px;font-size:10px;text-align:center;border:1px solid #d7d7d7;width:40px;">✓</th>
-            <th style="padding:4px 8px;font-size:10px;text-align:left;border:1px solid #d7d7d7;">Produto</th>
-            <th style="padding:4px 8px;font-size:10px;text-align:center;border:1px solid #d7d7d7;width:110px;">Qtd Pedida</th>
-            <th style="padding:4px 8px;font-size:10px;text-align:center;border:1px solid #d7d7d7;width:130px;">Qtd Real / Peso</th>
-            ${showReadyValues ? `<th style="padding:4px 8px;font-size:10px;text-align:right;border:1px solid #d7d7d7;width:100px;">Total c/ IVA</th>` : ""}
+            <th style="padding:5px 6px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:40px;">✓</th>
+            <th style="padding:5px 8px;font-size:9px;text-align:left;border:1px solid #d7d7d7;">Produto</th>
+            <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:70px;">Qtd</th>
+            <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:60px;">Unid.</th>
+            <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:130px;">Qtd Real / Peso</th>
+            ${showReadyValues ? `<th style="padding:5px 8px;font-size:9px;text-align:right;border:1px solid #d7d7d7;width:90px;">Total c/ IVA</th>` : ""}
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
