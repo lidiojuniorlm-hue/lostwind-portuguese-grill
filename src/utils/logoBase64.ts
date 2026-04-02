@@ -1,4 +1,4 @@
-import logoSrc from "@/assets/logo-lostwind.jpeg";
+import logoSrc from "@/assets/logo-gestao.png";
 
 let cachedBase64: string | null = null;
 
