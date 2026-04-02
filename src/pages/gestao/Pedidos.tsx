@@ -230,7 +230,7 @@ export default function Pedidos() {
         const actualUnitLabel = item.unit;
 
         const realQtyContent = showReadyValues
-          ? `<span style="font-weight:600;color:#2f2f2f;">${actualQtyValue}</span><span style="display:inline-block;width:6px;"></span><span style="font-size:10px;color:#666;">${actualUnitLabel}</span>`
+          ? `<span style="font-weight:600;color:#2f2f2f;">${actualQtyValue}</span><span style="display:inline-block;width:6px;"></span><span style="font-size:10px;color:#2a2a2a;">${actualUnitLabel}</span>`
           : `<span style="display:inline-block;width:92px;border-bottom:1px solid #7a7a7a;height:14px;"></span>`;
 
         const priceWithVat = showReadyValues
@@ -248,7 +248,7 @@ export default function Pedidos() {
           </td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;font-weight:500;">${item.product_name}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:13px;color:#2a2a2a;font-weight:700;">${qtyValue}</td>
-          <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:10px;color:#666;">${unitLabel}</td>
+          <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:10px;color:#2a2a2a;">${unitLabel}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${realQtyContent}</td>
           ${showReadyValues ? `<td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:right;font-size:12px;font-weight:600;color:#2a2a2a;">€${priceWithVat}</td>` : ""}
         </tr>`;

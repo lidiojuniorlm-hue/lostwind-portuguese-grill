@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import logo from "@/assets/logo-lostwind.jpeg";
+import logo from "@/assets/logo-gestao-red.png";
 import { Flame, Loader2 } from "lucide-react";
 
 export default function LoginPage() {

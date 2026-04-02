@@ -2,7 +2,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { GestaoSidebar } from "./GestaoSidebar";
-import logo from "@/assets/logo-gestao.png";
+import logo from "@/assets/logo-gestao-red.png";
 import { Loader2 } from "lucide-react";
 
 const ROLE_LABELS: Record<string, string> = {
