@@ -453,8 +453,18 @@ export default function Pedidos() {
                             {statusFlow.slice(statusFlow.indexOf(order.status) + 1).map((nextStatus) => (
                               <Button key={nextStatus} size="sm" variant="outline" onClick={() => handleStatusChange(order.id, nextStatus)} className="text-xs">→ {ORDER_STATUS_LABELS[nextStatus]}</Button>
                             ))}
-                            <Button size="sm" variant="outline" onClick={() => handleStatusChange(order.id, "cancelado")} className="text-xs text-destructive border-destructive/30">Cancelar</Button>
+                             <Button size="sm" variant="outline" onClick={() => handleStatusChange(order.id, "cancelado")} className="text-xs text-destructive border-destructive/30">Cancelar</Button>
                           </>
+                        )}
+                        {(user.role === "admin") && (
+                          <Button size="sm" variant="outline" onClick={async () => {
+                            if (!confirm("Tem certeza que deseja apagar este pedido? Os dados serão removidos permanentemente.")) return;
+                            await deleteOrder.mutateAsync(order.id);
+                            logActivity.mutate({ user_id: user.id, user_name: user.name, action: "Pedido apagado", details: `Pedido ${order.id.slice(0, 8)} — ${order.store_name}` });
+                            toast.success("Pedido apagado com sucesso");
+                          }} className="text-xs text-destructive border-destructive/30">
+                            <Trash2 className="w-3 h-3 mr-1" /> Apagar
+                          </Button>
                         )}
                       </div>
                     </div>
