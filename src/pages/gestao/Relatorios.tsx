@@ -7,7 +7,7 @@ import { SECTIONS, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, type OrderStatus } 
 import { TrendingUp, Package, ShoppingCart, Euro, Calendar, Store, BarChart3, Download, FileDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, AreaChart, Area } from "recharts";
 import jsPDF from "jspdf";
-import { createPDFHeader, addPDFFooter, runPDFTable, downloadPDF } from "@/utils/pdfHelpers";
+import { createPDFHeader, addPDFFooter, runPDFTable, downloadPDF, addPDFSectionTitle, modernTableStyles } from "@/utils/pdfHelpers";
 
 const CHART_COLORS = ["hsl(0,78%,50%)", "hsl(25,95%,53%)", "hsl(40,100%,60%)", "hsl(200,70%,50%)", "hsl(150,60%,45%)", "hsl(280,60%,55%)"];
 
@@ -133,11 +133,8 @@ export default function Relatorios() {
     const periodLabel = period === "hoje" ? "Hoje" : period === "7d" ? "7 dias" : period === "30d" ? "30 dias" : period === "90d" ? "90 dias" : "Tudo";
     let y = await createPDFHeader(doc, "Relatório de Movimentações", `Período: ${periodLabel} ${selectedStore !== "todas" ? `· Loja: ${selectedStore}` : "· Todas as lojas"}`);
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("Resumo Geral", 14, y);
-    y += 6;
-
+    // KPI summary
+    y = addPDFSectionTitle(doc, "Resumo Geral", y);
     const kpis = [
       ["Pedidos", totalOrders.toString()],
       ["Itens", totalItems.toString()],
@@ -149,81 +146,54 @@ export default function Relatorios() {
 
     y = runPDFTable(doc, {
       startY: y,
-      head: [kpis.map((k) => k[0])],
-      body: [kpis.map((k) => k[1])],
+      head: [kpis.map(k => k[0])],
+      body: [kpis.map(k => k[1])],
       theme: "grid",
-      headStyles: { fillColor: [196, 57, 43], fontSize: 8, halign: "center" },
-      bodyStyles: { fontSize: 9, halign: "center", fontStyle: "bold" },
-      margin: { left: 14, right: 14 },
+      ...modernTableStyles,
+      headStyles: { ...modernTableStyles.headStyles },
+      bodyStyles: { ...modernTableStyles.bodyStyles, halign: "center", fontStyle: "bold" },
     }) + 10;
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text("Faturação por Secção", 14, y);
-    y += 4;
-
-    const sectionRows = SECTIONS.map((s) => [
-      s,
-      bySection[s].qty.toString(),
-      `€${bySection[s].total.toFixed(2)}`,
-      `€${bySection[s].vat.toFixed(2)}`,
-      `€${(bySection[s].total + bySection[s].vat).toFixed(2)}`,
-    ]).filter((r) => r[1] !== "0");
+    // By section
+    y = addPDFSectionTitle(doc, "Faturação por Secção", y);
+    const sectionRows = SECTIONS.map(s => [
+      s, bySection[s].qty.toString(), `€${bySection[s].total.toFixed(2)}`, `€${bySection[s].vat.toFixed(2)}`, `€${(bySection[s].total + bySection[s].vat).toFixed(2)}`,
+    ]).filter(r => r[1] !== "0");
 
     y = runPDFTable(doc, {
       startY: y,
       head: [["Secção", "Qtd", "Subtotal", "IVA", "Total"]],
       body: sectionRows,
       theme: "striped",
-      headStyles: { fillColor: [196, 57, 43], fontSize: 8 },
-      bodyStyles: { fontSize: 8 },
+      ...modernTableStyles,
       columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
-      margin: { left: 14, right: 14 },
     }) + 10;
 
+    // Top products
     if (topProducts.length > 0) {
-      if (y > 230) {
-        doc.addPage();
-        y = 20;
-      }
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text("Top 10 Produtos", 14, y);
-      y += 4;
-
+      if (y > 220) { doc.addPage(); y = 20; }
+      y = addPDFSectionTitle(doc, "Top 10 Produtos", y);
       y = runPDFTable(doc, {
         startY: y,
         head: [["#", "Produto", "Secção", "Qtd", "Total"]],
         body: topProducts.map((p, i) => [i + 1, p.name, p.section, p.qty, `€${p.total.toFixed(2)}`]),
         theme: "striped",
-        headStyles: { fillColor: [196, 57, 43], fontSize: 8 },
-        bodyStyles: { fontSize: 8 },
+        ...modernTableStyles,
         columnStyles: { 0: { halign: "center", cellWidth: 12 }, 3: { halign: "center" }, 4: { halign: "right" } },
-        margin: { left: 14, right: 14 },
       }) + 10;
     }
 
+    // By store
     if (byStore.length > 0) {
-      if (y > 230) {
-        doc.addPage();
-        y = 20;
-      }
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text("Faturação por Loja", 14, y);
-      y += 4;
-
+      if (y > 220) { doc.addPage(); y = 20; }
+      y = addPDFSectionTitle(doc, "Faturação por Loja", y);
       runPDFTable(doc, {
         startY: y,
         head: [["Loja", "Pedidos", "Itens", "Subtotal", "IVA", "Total"]],
         body: byStore.map(([name, d]) => [name, d.count, d.items, `€${d.total.toFixed(2)}`, `€${d.vat.toFixed(2)}`, `€${(d.total + d.vat).toFixed(2)}`]),
         theme: "striped",
-        headStyles: { fillColor: [196, 57, 43], fontSize: 8 },
-        bodyStyles: { fontSize: 8 },
+        ...modernTableStyles,
         columnStyles: { 1: { halign: "center" }, 2: { halign: "center" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } },
-        margin: { left: 14, right: 14 },
       });
     }
 

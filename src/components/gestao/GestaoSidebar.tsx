@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, ClipboardList, Package, Users, LogOut, BarChart3, Warehouse, Euro, Truck, Settings, Clock } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, ClipboardList, Package, Users, LogOut, BarChart3, Warehouse, Euro, Truck, Settings, Clock, ShieldCheck } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -50,6 +50,7 @@ export function GestaoSidebar() {
 
   const managementNav = [
     { title: "Inventário", url: "/gestao/inventario", icon: Warehouse, roles: ["admin", "armazem"] },
+    { title: "Validades", url: "/gestao/validades", icon: ShieldCheck, roles: ["admin", "armazem"] },
     { title: "Relatórios", url: "/gestao/relatorios", icon: BarChart3, roles: ["admin", "armazem"] },
     { title: "Financeiro", url: "/gestao/financeiro", icon: Euro, roles: ["admin"] },
     { title: "Fornecedores", url: "/gestao/fornecedores", icon: Truck, roles: ["admin"] },
