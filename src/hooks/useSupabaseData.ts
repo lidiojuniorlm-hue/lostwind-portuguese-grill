@@ -292,6 +292,55 @@ export function useLogActivity() {
   });
 }
 
+// ─── Product Expiry ───
+export function useProductExpiry() {
+  return useQuery({
+    queryKey: ["product_expiry"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_expiry")
+        .select("*")
+        .order("expiry_date", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useProductExpiryMutations() {
+  const qc = useQueryClient();
+  const addExpiry = useMutation({
+    mutationFn: async (item: any) => {
+      const { error } = await supabase.from("product_expiry").insert(item);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["product_expiry"] }),
+  });
+  const deleteExpiry = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("product_expiry").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["product_expiry"] }),
+  });
+  return { addExpiry, deleteExpiry };
+}
+
+// ─── Delete Order ───
+export function useDeleteOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      // Delete items first, then order
+      const { error: itemsErr } = await supabase.from("order_items").delete().eq("order_id", orderId);
+      if (itemsErr) throw itemsErr;
+      const { error: orderErr } = await supabase.from("orders").delete().eq("id", orderId);
+      if (orderErr) throw orderErr;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
+  });
+}
+
 // ─── Users (via edge function) ───
 export function useUsers() {
   return useQuery({

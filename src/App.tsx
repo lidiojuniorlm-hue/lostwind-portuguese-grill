@@ -45,6 +45,7 @@ const App = () => (
               <Route path="utilizadores" element={<Utilizadores />} />
               <Route path="configuracoes" element={<Configuracoes />} />
               <Route path="atividade" element={<Atividade />} />
+              <Route path="validades" element={<Validades />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

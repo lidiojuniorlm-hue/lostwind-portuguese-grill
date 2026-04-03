@@ -50,6 +50,7 @@ export function GestaoSidebar() {
 
   const managementNav = [
     { title: "Inventário", url: "/gestao/inventario", icon: Warehouse, roles: ["admin", "armazem"] },
+    { title: "Validades", url: "/gestao/validades", icon: ShieldCheck, roles: ["admin", "armazem"] },
     { title: "Relatórios", url: "/gestao/relatorios", icon: BarChart3, roles: ["admin", "armazem"] },
     { title: "Financeiro", url: "/gestao/financeiro", icon: Euro, roles: ["admin"] },
     { title: "Fornecedores", url: "/gestao/fornecedores", icon: Truck, roles: ["admin"] },
