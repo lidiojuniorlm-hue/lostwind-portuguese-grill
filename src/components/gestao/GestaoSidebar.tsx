@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, ClipboardList, Package, Users, LogOut, BarChart3, Warehouse, Euro, Truck, Settings, Clock } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, ClipboardList, Package, Users, LogOut, BarChart3, Warehouse, Euro, Truck, Settings, Clock, ShieldCheck } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
