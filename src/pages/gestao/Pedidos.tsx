@@ -28,6 +28,7 @@ export default function Pedidos() {
   const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
   const { data: users = [] } = useUsers();
   const { updateOrderStatus, updateOrderItems } = useOrderMutations();
+  const deleteOrder = useDeleteOrder();
   const logActivity = useLogActivity();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<OrderStatus | "todos">("todos");
