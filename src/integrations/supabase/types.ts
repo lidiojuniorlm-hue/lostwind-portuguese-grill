@@ -187,6 +187,48 @@ export type Database = {
         }
         Relationships: []
       }
+      product_expiry: {
+        Row: {
+          created_at: string
+          created_by: string
+          expiry_date: string
+          id: string
+          notes: string | null
+          product_name: string
+          production_date: string
+          quantity: number
+          section: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expiry_date: string
+          id?: string
+          notes?: string | null
+          product_name: string
+          production_date: string
+          quantity?: number
+          section?: string
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expiry_date?: string
+          id?: string
+          notes?: string | null
+          product_name?: string
+          production_date?: string
+          quantity?: number
+          section?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           active: boolean
