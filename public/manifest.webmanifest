@@ -1,0 +1,17 @@
+{
+  "name": "Churrasqueira Lost Wind",
+  "short_name": "Lost Wind",
+  "description": "A arte do bom grelhado!",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#ffffff",
+  "theme_color": "#b43c32",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
