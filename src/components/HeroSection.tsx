@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Flame, ArrowDown } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 import heroImg from "@/assets/hero-grill.jpg";
 import logo from "@/assets/logo-lostwind.jpeg";
 
@@ -36,16 +36,6 @@ const HeroSection = () => {
             />
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="inline-flex items-center gap-2 bg-primary/20 border border-primary/30 rounded-full px-4 py-2 mb-6"
-          >
-            <Flame className="w-4 h-4 text-primary animate-flame-pulse" />
-            <span className="text-sm font-medium text-primary">Desde 2018 · A Arte do Bom Grelhado</span>
-          </motion.div>
-
           <motion.h1
             className="text-5xl sm:text-7xl lg:text-8xl font-heading leading-[0.9] mb-6"
             initial={{ opacity: 0, y: 40 }}
@@ -71,13 +61,22 @@ const HeroSection = () => {
           </motion.h1>
 
           <motion.p
-            className="text-lg md:text-xl text-muted-foreground max-w-xl mb-8 font-body"
+            className="text-xl md:text-2xl text-muted-foreground max-w-xl mb-2 font-body italic"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 0.6 }}
           >
-            O melhor grelhado na brasa de Portugal. Sabor autêntico, qualidade incomparável 
-            e paixão em cada refeição. Takeaway & entregas ao domicílio.
+            A Arte do Bom Grelhado
+          </motion.p>
+
+          <motion.p
+            className="text-base md:text-lg text-muted-foreground max-w-xl mb-8 font-body"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1, duration: 0.6 }}
+          >
+            Sabor autêntico, qualidade incomparável e paixão em cada refeição.
+            9 lojas para melhor o servir — takeaway & entregas ao domicílio.
           </motion.p>
 
           <motion.div
@@ -87,12 +86,12 @@ const HeroSection = () => {
             transition={{ delay: 1.2, duration: 0.6 }}
           >
             <motion.a
-              href="#delivery"
+              href="#lojas"
               whileHover={{ scale: 1.05, boxShadow: "0 0 50px -10px hsl(0 78% 50% / 0.6)" }}
               whileTap={{ scale: 0.95 }}
               className="bg-gradient-flame text-primary-foreground px-8 py-4 rounded-lg font-semibold text-lg shadow-flame text-center"
             >
-              🔥 Pedir Agora
+              🔥 Nossas Lojas
             </motion.a>
             <motion.a
               href="#menu"
@@ -111,7 +110,7 @@ const HeroSection = () => {
           transition={{ delay: 2 }}
           className="absolute bottom-8 left-1/2 -translate-x-1/2"
         >
-          <a href="#menu" className="animate-float block">
+          <a href="#galeria" className="animate-float block">
             <ArrowDown className="w-6 h-6 text-muted-foreground" />
           </a>
         </motion.div>
