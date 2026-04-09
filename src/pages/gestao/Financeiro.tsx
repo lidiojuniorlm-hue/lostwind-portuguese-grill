@@ -9,7 +9,29 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import jsPDF from "jspdf";
 import { createPDFHeader, addPDFFooter, runPDFTable, downloadPDF, addPDFSectionTitle, modernTableStyles } from "@/utils/pdfHelpers";
 
-const CHART_COLORS = ["hsl(0,78%,50%)", "hsl(25,95%,53%)", "hsl(40,100%,60%)", "hsl(200,70%,50%)", "hsl(150,60%,45%)", "hsl(280,60%,55%)", "hsl(90,60%,45%)"];
+const CHART_COLORS = [
+  "hsl(220, 14%, 46%)", "hsl(200, 18%, 55%)", "hsl(160, 20%, 50%)",
+  "hsl(35, 25%, 55%)", "hsl(0, 15%, 50%)", "hsl(270, 12%, 52%)", "hsl(100, 15%, 48%)"
+];
+
+// Helper: use actual values when available
+const getEffective = (item: any) => {
+  const qty = Number(item.actual_qty ?? item.qty);
+  const price = Number(item.actual_price ?? item.unit_price);
+  const vatRate = Number(item.actual_vat ?? item.vat_rate);
+  const subtotal = qty * price;
+  const vat = subtotal * (vatRate / 100);
+  return { qty, price, vatRate, subtotal, vat, total: subtotal + vat };
+};
+
+const tooltipStyle = {
+  background: "hsl(220, 13%, 12%)",
+  border: "1px solid hsl(220, 10%, 22%)",
+  borderRadius: 10,
+  fontSize: 12,
+  color: "hsl(220, 10%, 85%)",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+};
 
 export default function Financeiro() {
   const { user } = useAuth();
@@ -31,9 +53,9 @@ export default function Financeiro() {
   const totals = useMemo(() => {
     let subtotal = 0, vat = 0;
     filteredOrders.forEach((o: any) => (o.items || []).forEach((i: any) => {
-      const line = Number(i.unit_price) * Number(i.qty);
-      subtotal += line;
-      vat += line * (Number(i.vat_rate) / 100);
+      const e = getEffective(i);
+      subtotal += e.subtotal;
+      vat += e.vat;
     }));
     return { subtotal, vat, total: subtotal + vat, avgOrder: filteredOrders.length ? (subtotal + vat) / filteredOrders.length : 0 };
   }, [filteredOrders]);
@@ -41,11 +63,10 @@ export default function Financeiro() {
   const vatBreakdown = useMemo(() => {
     const map: Record<number, { base: number; vat: number }> = {};
     filteredOrders.forEach((o: any) => (o.items || []).forEach((i: any) => {
-      const rate = Number(i.vat_rate);
-      if (!map[rate]) map[rate] = { base: 0, vat: 0 };
-      const line = Number(i.unit_price) * Number(i.qty);
-      map[rate].base += line;
-      map[rate].vat += line * (rate / 100);
+      const e = getEffective(i);
+      if (!map[e.vatRate]) map[e.vatRate] = { base: 0, vat: 0 };
+      map[e.vatRate].base += e.subtotal;
+      map[e.vatRate].vat += e.vat;
     }));
     return Object.entries(map).map(([rate, d]) => ({ rate: `${rate}%`, base: d.base, vat: d.vat, total: d.base + d.vat }));
   }, [filteredOrders]);
@@ -53,7 +74,9 @@ export default function Financeiro() {
   const bySection = useMemo(() => {
     const map: Record<string, number> = {};
     SECTIONS.forEach(s => { map[s] = 0; });
-    filteredOrders.forEach((o: any) => (o.items || []).forEach((i: any) => { map[i.section] += Number(i.unit_price) * Number(i.qty) * (1 + Number(i.vat_rate) / 100); }));
+    filteredOrders.forEach((o: any) => (o.items || []).forEach((i: any) => {
+      map[i.section] += getEffective(i).total;
+    }));
     return Object.entries(map).filter(([, v]) => v > 0).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }));
   }, [filteredOrders]);
 
@@ -64,9 +87,9 @@ export default function Financeiro() {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       if (!map[key]) map[key] = { subtotal: 0, vat: 0 };
       (o.items || []).forEach((i: any) => {
-        const line = Number(i.unit_price) * Number(i.qty);
-        map[key].subtotal += line;
-        map[key].vat += line * (Number(i.vat_rate) / 100);
+        const e = getEffective(i);
+        map[key].subtotal += e.subtotal;
+        map[key].vat += e.vat;
       });
     });
     return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0])).map(([month, d]) => ({
@@ -153,23 +176,37 @@ export default function Financeiro() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="bg-card border-border"><CardContent className="p-4"><div className="flex items-center gap-2 mb-1"><Euro className="w-4 h-4 text-green-500" /><span className="text-xs text-muted-foreground">Subtotal</span></div><p className="text-xl font-heading text-foreground">€{totals.subtotal.toFixed(2)}</p></CardContent></Card>
-        <Card className="bg-card border-border"><CardContent className="p-4"><div className="flex items-center gap-2 mb-1"><Percent className="w-4 h-4 text-yellow-500" /><span className="text-xs text-muted-foreground">IVA Total</span></div><p className="text-xl font-heading text-foreground">€{totals.vat.toFixed(2)}</p></CardContent></Card>
-        <Card className="bg-card border-border"><CardContent className="p-4"><div className="flex items-center gap-2 mb-1"><TrendingUp className="w-4 h-4 text-primary" /><span className="text-xs text-muted-foreground">Total c/ IVA</span></div><p className="text-xl font-heading text-foreground">€{totals.total.toFixed(2)}</p></CardContent></Card>
-        <Card className="bg-card border-border"><CardContent className="p-4"><div className="flex items-center gap-2 mb-1"><Receipt className="w-4 h-4 text-blue-500" /><span className="text-xs text-muted-foreground">Média/Pedido</span></div><p className="text-xl font-heading text-foreground">€{totals.avgOrder.toFixed(2)}</p></CardContent></Card>
+        {[
+          { icon: Euro, label: "Subtotal", value: `€${totals.subtotal.toFixed(2)}`, accent: "hsl(160, 20%, 50%)" },
+          { icon: Percent, label: "IVA Total", value: `€${totals.vat.toFixed(2)}`, accent: "hsl(35, 25%, 55%)" },
+          { icon: TrendingUp, label: "Total c/ IVA", value: `€${totals.total.toFixed(2)}`, accent: "hsl(220, 14%, 46%)" },
+          { icon: Receipt, label: "Média/Pedido", value: `€${totals.avgOrder.toFixed(2)}`, accent: "hsl(200, 18%, 55%)" },
+        ].map((kpi, idx) => (
+          <Card key={idx} className="bg-card border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${kpi.accent}20` }}>
+                  <kpi.icon className="w-4 h-4" style={{ color: kpi.accent }} />
+                </div>
+                <span className="text-xs text-muted-foreground">{kpi.label}</span>
+              </div>
+              <p className="text-xl font-heading text-foreground">{kpi.value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="bg-card border-border">
-          <CardHeader><CardTitle className="text-sm font-heading">Faturação por Secção</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-heading text-muted-foreground">Faturação por Secção</CardTitle></CardHeader>
           <CardContent>
             {bySection.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">Sem dados</p> : (
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
-                  <Pie data={bySection} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                  <Pie data={bySection} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={45} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10} strokeWidth={2} stroke="hsl(220, 13%, 12%)">
                     {bySection.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Pie>
-                  <Tooltip formatter={(v: number) => `€${v.toFixed(2)}`} contentStyle={{ background: "hsl(0,0%,8%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, fontSize: 12, color: "hsl(0,0%,90%)" }} />
+                  <Tooltip formatter={(v: number) => `€${v.toFixed(2)}`} contentStyle={tooltipStyle} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -177,7 +214,7 @@ export default function Financeiro() {
         </Card>
 
         <Card className="bg-card border-border">
-          <CardHeader><CardTitle className="text-sm font-heading">Discriminação de IVA</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-heading text-muted-foreground">Discriminação de IVA</CardTitle></CardHeader>
           <CardContent>
             {vatBreakdown.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">Sem dados</p> : (
               <div className="overflow-x-auto">
@@ -185,14 +222,14 @@ export default function Financeiro() {
                   <thead><tr className="border-b border-border text-muted-foreground"><th className="text-left py-2 px-2">Taxa</th><th className="text-right py-2 px-2">Base Tributável</th><th className="text-right py-2 px-2">IVA</th><th className="text-right py-2 px-2">Total</th></tr></thead>
                   <tbody>
                     {vatBreakdown.map(r => (
-                      <tr key={r.rate} className="border-b border-border/50">
-                        <td className="py-2 px-2 text-foreground font-medium">{r.rate}</td>
-                        <td className="py-2 px-2 text-right text-muted-foreground">€{r.base.toFixed(2)}</td>
-                        <td className="py-2 px-2 text-right text-yellow-400">€{r.vat.toFixed(2)}</td>
-                        <td className="py-2 px-2 text-right text-foreground">€{r.total.toFixed(2)}</td>
+                      <tr key={r.rate} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                        <td className="py-2.5 px-2 text-foreground font-medium">{r.rate}</td>
+                        <td className="py-2.5 px-2 text-right text-muted-foreground">€{r.base.toFixed(2)}</td>
+                        <td className="py-2.5 px-2 text-right" style={{ color: "hsl(35, 25%, 55%)" }}>€{r.vat.toFixed(2)}</td>
+                        <td className="py-2.5 px-2 text-right text-foreground">€{r.total.toFixed(2)}</td>
                       </tr>
                     ))}
-                    <tr className="font-medium"><td className="py-2 px-2 text-foreground">Total</td><td className="py-2 px-2 text-right text-foreground">€{totals.subtotal.toFixed(2)}</td><td className="py-2 px-2 text-right text-yellow-400">€{totals.vat.toFixed(2)}</td><td className="py-2 px-2 text-right text-foreground">€{totals.total.toFixed(2)}</td></tr>
+                    <tr className="font-medium"><td className="py-2.5 px-2 text-foreground">Total</td><td className="py-2.5 px-2 text-right text-foreground">€{totals.subtotal.toFixed(2)}</td><td className="py-2.5 px-2 text-right" style={{ color: "hsl(35, 25%, 55%)" }}>€{totals.vat.toFixed(2)}</td><td className="py-2.5 px-2 text-right text-foreground">€{totals.total.toFixed(2)}</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -203,17 +240,17 @@ export default function Financeiro() {
 
       {monthlyRevenue.length > 0 && (
         <Card className="bg-card border-border">
-          <CardHeader><CardTitle className="text-sm font-heading">Evolução Mensal de Faturação</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-heading text-muted-foreground">Evolução Mensal de Faturação</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={monthlyRevenue}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,18%)" />
-                <XAxis dataKey="month" tick={{ fill: "hsl(0,0%,60%)", fontSize: 11 }} />
-                <YAxis tick={{ fill: "hsl(0,0%,60%)", fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: "hsl(0,0%,8%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, fontSize: 12, color: "hsl(0,0%,90%)" }} formatter={(v: number) => `€${v.toFixed(2)}`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 10%, 18%)" />
+                <XAxis dataKey="month" tick={{ fill: "hsl(220, 10%, 55%)", fontSize: 11 }} axisLine={{ stroke: "hsl(220, 10%, 22%)" }} />
+                <YAxis tick={{ fill: "hsl(220, 10%, 55%)", fontSize: 11 }} axisLine={{ stroke: "hsl(220, 10%, 22%)" }} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `€${v.toFixed(2)}`} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="subtotal" name="Subtotal" fill="hsl(0,78%,50%)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="vat" name="IVA" fill="hsl(40,100%,60%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="subtotal" name="Subtotal" fill="hsl(220, 14%, 46%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="vat" name="IVA" fill="hsl(35, 25%, 55%)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
