@@ -25,15 +25,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabaseCaller = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
+    const token = authHeader.replace("Bearer ", "");
     const {
       data: { user: caller },
-    } = await supabaseCaller.auth.getUser();
-    if (!caller) {
+      error: userError,
+    } = await supabaseAdmin.auth.getUser(token);
+    if (userError || !caller) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
