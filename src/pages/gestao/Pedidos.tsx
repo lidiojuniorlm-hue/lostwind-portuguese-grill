@@ -235,10 +235,18 @@ export default function Pedidos() {
         const unitLabel = item.unit;
         const actualQtyValue = formatQty(Number(item.actual_qty ?? item.qty));
         const actualUnitLabel = item.unit;
+        const e = getEffective(item);
+        const unitPriceSemIva = e.price;
+        const lineTotalSemIva = e.subtotal;
 
         const realQtyContent = showReadyValues
           ? `<span style="font-weight:600;color:#2f2f2f;">${actualQtyValue}</span><span style="display:inline-block;width:6px;"></span><span style="font-size:10px;color:#2a2a2a;">${actualUnitLabel}</span>`
           : `<span style="display:inline-block;width:92px;border-bottom:1px solid #7a7a7a;height:14px;"></span>`;
+
+        const priceCol = showReadyValues
+          ? `<td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:right;font-size:11px;color:#2a2a2a;">€${unitPriceSemIva.toFixed(2)}</td>
+             <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:right;font-size:12px;color:#2a2a2a;font-weight:600;">€${lineTotalSemIva.toFixed(2)}</td>`
+          : "";
 
         return `<tr>
           <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;width:40px;">
@@ -248,8 +256,14 @@ export default function Pedidos() {
           <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:13px;color:#2a2a2a;font-weight:700;">${qtyValue}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:10px;color:#2a2a2a;">${unitLabel}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${realQtyContent}</td>
+          ${priceCol}
         </tr>`;
       }).join("");
+
+      const priceHeaders = showReadyValues
+        ? `<th style="padding:5px 8px;font-size:9px;text-align:right;border:1px solid #d7d7d7;width:70px;">Preço</th>
+           <th style="padding:5px 8px;font-size:9px;text-align:right;border:1px solid #d7d7d7;width:80px;">Total</th>`
+        : "";
 
       return `<div style="margin-bottom:10px;">
         <div style="font-size:13px;font-weight:700;color:#c0392b;margin-bottom:4px;padding:4px 8px;background:#fef2f2;border-left:3px solid #c0392b;border-radius:2px;">${section}</div>
@@ -260,6 +274,7 @@ export default function Pedidos() {
             <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:70px;">Qtd</th>
             <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:60px;">Unid.</th>
             <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:130px;">Qtd Real / Peso</th>
+            ${priceHeaders}
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
