@@ -6,6 +6,14 @@ import { Package, ClipboardList, Users, ShoppingCart, TrendingUp, Euro, AlertTri
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, SECTIONS } from "@/types/warehouse";
 import { Link } from "react-router-dom";
 
+// Helper: use actual values when available
+const getEffectiveTotal = (item: any) => {
+  const qty = Number(item.actual_qty ?? item.qty);
+  const price = Number(item.actual_price ?? item.unit_price);
+  const vatRate = Number(item.actual_vat ?? item.vat_rate);
+  return qty * price * (1 + vatRate / 100);
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { data: products = [] } = useProducts();
@@ -40,12 +48,16 @@ export default function Dashboard() {
   const readyOrders = myOrders.filter((o: any) => o.status === "pronto").length;
   const deliveredOrders = myOrders.filter((o: any) => o.status === "entregue").length;
 
+  // Use actual values when available for real-time accuracy
   const totalValue = myOrders.reduce(
-    (sum: number, o: any) => sum + (o.items || []).reduce((s: number, i: any) => s + Number(i.unit_price) * Number(i.qty) * (1 + Number(i.vat_rate) / 100), 0),
+    (sum: number, o: any) => sum + (o.items || []).reduce((s: number, i: any) => s + getEffectiveTotal(i), 0),
     0
   );
 
-  const todayValue = todayOrders.reduce((sum: number, o: any) => sum + (o.items || []).reduce((s: number, i: any) => s + Number(i.unit_price) * Number(i.qty) * (1 + Number(i.vat_rate) / 100), 0), 0);
+  const todayValue = todayOrders.reduce(
+    (sum: number, o: any) => sum + (o.items || []).reduce((s: number, i: any) => s + getEffectiveTotal(i), 0),
+    0
+  );
 
   const stockAlerts = useMemo(() => {
     return products.map((p: any) => {

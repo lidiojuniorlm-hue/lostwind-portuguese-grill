@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { SECTIONS, Section } from "@/types/warehouse";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, Minus, Trash2, Send, ShoppingCart, Loader2, Search } from "lucide-react";
 
@@ -31,8 +32,11 @@ export default function NovoPedido() {
 
   if (!user || user.role !== "funcionario") return null;
 
+  // When searching, show products from ALL sections; otherwise filter by active section
+  const isSearching = searchTerm.trim().length > 0;
+
   const sectionProducts = products
-    .filter((p) => p.section === activeSection)
+    .filter((p) => isSearching ? true : p.section === activeSection)
     .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -111,7 +115,7 @@ export default function NovoPedido() {
 
       <div className="flex flex-wrap gap-2">
         {SECTIONS.map((s) => (
-          <button key={s} onClick={() => setActiveSection(s)} className={`text-xs px-3 py-2 rounded-lg border transition-all ${activeSection === s ? "bg-primary/20 border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+          <button key={s} onClick={() => { setActiveSection(s); setSearchTerm(""); }} className={`text-xs px-3 py-2 rounded-lg border transition-all ${activeSection === s && !isSearching ? "bg-primary/20 border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
             {s}
           </button>
         ))}
@@ -119,13 +123,15 @@ export default function NovoPedido() {
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Pesquisar produto..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9" />
+        <Input placeholder="Pesquisar em todas as secções..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-2">
           {sectionProducts.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Sem produtos nesta secção</p>
+            <p className="text-sm text-muted-foreground text-center py-8">
+              {isSearching ? "Nenhum produto encontrado" : "Sem produtos nesta secção"}
+            </p>
           ) : (
             sectionProducts.map((product: any) => {
               const qty = getCartQty(product.id);
@@ -135,6 +141,7 @@ export default function NovoPedido() {
                     <p className="text-sm font-medium text-foreground">{product.name}</p>
                     <div className="flex gap-3 text-xs text-muted-foreground mt-1">
                       <span>{product.unit}</span>
+                      {isSearching && <span className="text-primary/70">{product.section}</span>}
                     </div>
                   </div>
                   {qty === 0 ? (
@@ -172,8 +179,14 @@ export default function NovoPedido() {
               </div>
             )}
             <div className="mt-4">
-              <label className="text-xs text-muted-foreground block mb-1">Notas</label>
-              <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Observações..." className="text-sm" />
+              <label className="text-xs text-muted-foreground block mb-1">Notas / Observações</label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Escreva observações...&#10;• Use Enter para nova linha&#10;• Use • para tópicos"
+                className="text-sm min-h-[80px] resize-y"
+                rows={3}
+              />
             </div>
             <Button onClick={handleSubmit} disabled={cart.length === 0 || createOrder.isPending} className="w-full mt-4 bg-gradient-flame text-primary-foreground">
               {createOrder.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />} Enviar Pedido
