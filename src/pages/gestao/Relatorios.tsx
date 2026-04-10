@@ -401,6 +401,7 @@ export default function Relatorios() {
       </div>
 
       {/* Charts Row 1 */}
+      <div ref={chartsRef}>
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="bg-card border-border">
           <CardHeader className="pb-2"><CardTitle className="text-sm font-heading tracking-wide text-muted-foreground">Distribuição por Estado</CardTitle></CardHeader>
