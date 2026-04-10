@@ -232,7 +232,6 @@ export default function Pedidos() {
 
       const rows = sectionItems.map((item: any) => {
         const qtyValue = formatQty(Number(item.qty));
-        const unitLabel = item.unit;
         const actualQtyValue = formatQty(Number(item.actual_qty ?? item.qty));
         const actualUnitLabel = item.unit;
         const e = getEffective(item);
@@ -254,7 +253,6 @@ export default function Pedidos() {
           </td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;font-weight:500;">${item.product_name}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:13px;color:#2a2a2a;font-weight:700;">${qtyValue}</td>
-          <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:10px;color:#2a2a2a;">${unitLabel}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${realQtyContent}</td>
           ${priceCol}
         </tr>`;
@@ -272,7 +270,6 @@ export default function Pedidos() {
             <th style="padding:5px 6px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:40px;">✓</th>
             <th style="padding:5px 8px;font-size:9px;text-align:left;border:1px solid #d7d7d7;">Produto</th>
             <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:70px;">Qtd</th>
-            <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:60px;">Unid.</th>
             <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:130px;">Qtd Real / Peso</th>
             ${priceHeaders}
           </tr></thead>
@@ -312,6 +309,16 @@ export default function Pedidos() {
             </div>
           </div>` : ""}
         ${(order as any).notes ? `<p style="margin-top:6px;font-size:10px;white-space:pre-line;"><strong>Notas:</strong> ${(order as any).notes}</p>` : ""}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px;padding-top:12px;border-top:1px solid #ddd;">
+          <div style="text-align:center;">
+            <p style="font-size:9px;color:#666;margin-bottom:32px;">Responsável do Armazém</p>
+            <div style="border-top:1px solid #333;padding-top:4px;font-size:9px;font-weight:600;">Assinatura / Carimbo</div>
+          </div>
+          <div style="text-align:center;">
+            <p style="font-size:9px;color:#666;margin-bottom:32px;">Motorista / Funcionário de Loja</p>
+            <div style="border-top:1px solid #333;padding-top:4px;font-size:9px;font-weight:600;">Assinatura / Carimbo</div>
+          </div>
+        </div>
         <script>window.onload=function(){window.print();}<\/script>
       </body></html>`);
     printWindow.document.close();
