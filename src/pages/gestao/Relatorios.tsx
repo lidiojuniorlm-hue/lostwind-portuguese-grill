@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrders, useProducts } from "@/hooks/useSupabaseData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { SECTIONS, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, type OrderStatus } 
 import { TrendingUp, Package, ShoppingCart, Euro, Calendar, Store, BarChart3, Download, FileDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, AreaChart, Area, Legend } from "recharts";
 import jsPDF from "jspdf";
-import { addPDFFooter, runPDFTable, downloadPDF, addPDFSectionTitle, modernTableStyles } from "@/utils/pdfHelpers";
+import { runPDFTable, downloadPDF } from "@/utils/pdfHelpers";
 import logoRelatorio from "@/assets/logo-relatorio.jpg";
 
 const CHART_COLORS = [
@@ -149,42 +149,6 @@ export default function Relatorios() {
     URL.revokeObjectURL(url);
   };
 
-  // Convert SVG chart to base64 PNG
-  const svgToImage = (svgEl: SVGSVGElement, width: number, height: number): Promise<string> => {
-    return new Promise((resolve) => {
-      const clone = svgEl.cloneNode(true) as SVGSVGElement;
-      clone.setAttribute("width", String(width));
-      clone.setAttribute("height", String(height));
-      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-      // Set white background for PDF readability
-      const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      bg.setAttribute("width", "100%");
-      bg.setAttribute("height", "100%");
-      bg.setAttribute("fill", "#ffffff");
-      clone.insertBefore(bg, clone.firstChild);
-      // Fix text colors for white background
-      clone.querySelectorAll("text").forEach(t => {
-        const fill = t.getAttribute("fill");
-        if (fill && fill.includes("55%")) t.setAttribute("fill", "#555");
-      });
-      const svgData = new XMLSerializer().serializeToString(clone);
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = width * 2;
-        canvas.height = height * 2;
-        const ctx = canvas.getContext("2d")!;
-        ctx.scale(2, 2);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/png", 0.95));
-      };
-      img.onerror = () => resolve("");
-      img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
-    });
-  };
-
   // Load logo as base64
   const loadLogoBase64 = (): Promise<string> => {
     return new Promise((resolve) => {
@@ -203,138 +167,256 @@ export default function Relatorios() {
     });
   };
 
-  const chartsRef = useRef<HTMLDivElement>(null);
-
   const handleExportPDF = async () => {
     const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
     const periodLabel = period === "hoje" ? "Hoje" : period === "7d" ? "7 dias" : period === "30d" ? "30 dias" : period === "90d" ? "90 dias" : "Tudo";
-
-    // --- Modern Header with uploaded logo ---
     const logoB64 = await loadLogoBase64();
-    doc.setFillColor(195, 57, 43); // Red brand bar
-    doc.rect(0, 0, pageWidth, 36, "F");
+
+    const brandDark = [30, 58, 82] as [number, number, number];   // dark teal
+    const brandAccent = [195, 57, 43] as [number, number, number]; // red
+    const brandLight = [41, 128, 185] as [number, number, number]; // blue
+    const gray50 = [249, 250, 251] as [number, number, number];
+    const gray200 = [229, 231, 235] as [number, number, number];
+    const gray600 = [75, 85, 99] as [number, number, number];
+    const gray900 = [17, 24, 39] as [number, number, number];
+    const white = [255, 255, 255] as [number, number, number];
+
+    // === HEADER ===
+    doc.setFillColor(...brandDark);
+    doc.rect(0, 0, pw, 38, "F");
+
+    // Accent line
+    doc.setFillColor(...brandAccent);
+    doc.rect(0, 38, pw, 1.5, "F");
 
     if (logoB64) {
-      try { doc.addImage(logoB64, "JPEG", 12, 5, 26, 26, undefined, "FAST"); } catch {}
+      try { doc.addImage(logoB64, "JPEG", 14, 6, 24, 24, undefined, "FAST"); } catch {}
     }
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(255, 255, 255);
-    doc.text("Relatório de Movimentações", 44, 16);
+    doc.setFontSize(18);
+    doc.setTextColor(...white);
+    doc.text("Relatório de KPI — Armazém", 44, 16);
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.setTextColor(255, 220, 220);
-    doc.text(`Período: ${periodLabel} ${selectedStore !== "todas" ? `· Loja: ${selectedStore}` : "· Todas as lojas"}`, 44, 23);
+    doc.setTextColor(180, 210, 230);
+    doc.text(`Lost Wind Churrasqueira  ·  ${periodLabel}${selectedStore !== "todas" ? ` · ${selectedStore}` : ""}`, 44, 23);
 
     doc.setFontSize(7.5);
-    doc.setTextColor(255, 200, 200);
+    doc.setTextColor(140, 180, 210);
     doc.text(`Gerado em ${new Date().toLocaleDateString("pt-PT")} às ${new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}`, 44, 29);
 
-    doc.setTextColor(40, 40, 40);
-    let y = 46;
+    let y = 48;
 
-    // --- KPI Summary ---
-    y = addPDFSectionTitle(doc, "Resumo Geral", y);
-    const kpis = [
-      ["Pedidos", totalOrders.toString()],
-      ["Itens", totalItems.toString()],
-      ["Total c/ IVA", `€${totalValue.toFixed(2)}`],
-      ["Média/Pedido", `€${avgOrderValue.toFixed(2)}`],
-      ["Taxa Entrega", `${fulfillmentRate}%`],
-      ["Cancelamentos", `${cancelRate}%`],
+    // === KPI CARDS (3x2 grid) ===
+    const kpiData = [
+      { label: "Total Pedidos", value: totalOrders.toString(), color: brandDark },
+      { label: "Itens Movimentados", value: totalItems.toString(), color: brandLight },
+      { label: "Faturação Total", value: `€${totalValue.toFixed(2)}`, color: brandAccent },
+      { label: "Média por Pedido", value: `€${avgOrderValue.toFixed(2)}`, color: brandDark },
+      { label: "Taxa de Entrega", value: `${fulfillmentRate}%`, color: [39, 174, 96] as [number, number, number] },
+      { label: "Taxa Cancelamento", value: `${cancelRate}%`, color: brandAccent },
     ];
 
-    y = runPDFTable(doc, {
-      startY: y,
-      head: [kpis.map(k => k[0])],
-      body: [kpis.map(k => k[1])],
-      theme: "grid",
-      ...modernTableStyles,
-      headStyles: { ...modernTableStyles.headStyles, fillColor: [195, 57, 43] as [number, number, number] },
-      bodyStyles: { ...modernTableStyles.bodyStyles, halign: "center", fontStyle: "bold" },
-    }) + 8;
+    const cardW = (pw - 28 - 12) / 3;
+    const cardH = 22;
 
-    // --- Capture Charts from DOM ---
-    if (chartsRef.current) {
-      const svgs = chartsRef.current.querySelectorAll<SVGSVGElement>(".recharts-wrapper svg");
-      const chartImages: string[] = [];
-      for (const svg of Array.from(svgs)) {
-        const rect = svg.getBoundingClientRect();
-        const img = await svgToImage(svg, rect.width, rect.height);
-        if (img) chartImages.push(img);
-      }
+    kpiData.forEach((kpi, i) => {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const cx = 14 + col * (cardW + 6);
+      const cy = y + row * (cardH + 5);
 
-      // Place charts 2 per row
-      const chartW = (pageWidth - 28 - 6) / 2;
-      const chartH = 55;
-      for (let i = 0; i < chartImages.length; i++) {
-        const col = i % 2;
-        if (i % 2 === 0 && i > 0) y += chartH + 8;
-        if (y + chartH > 270) { doc.addPage(); y = 20; }
-        const x = 14 + col * (chartW + 6);
-        try {
-          // Draw chart border
-          doc.setDrawColor(220, 220, 220);
-          doc.roundedRect(x, y, chartW, chartH, 2, 2, "S");
-          doc.addImage(chartImages[i], "PNG", x + 1, y + 1, chartW - 2, chartH - 2, undefined, "FAST");
-        } catch {}
-      }
-      if (chartImages.length > 0) y += chartH + 10;
+      // Card bg
+      doc.setFillColor(...gray50);
+      doc.roundedRect(cx, cy, cardW, cardH, 2, 2, "F");
+
+      // Left accent bar
+      doc.setFillColor(...(kpi.color as [number, number, number]));
+      doc.rect(cx, cy + 3, 1.2, cardH - 6, "F");
+
+      // Label
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...gray600);
+      doc.text(kpi.label, cx + 5, cy + 8);
+
+      // Value
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(...gray900);
+      doc.text(kpi.value, cx + 5, cy + 17);
+    });
+
+    y += 2 * (cardH + 5) + 8;
+
+    // === SECTION: Status dos Pedidos ===
+    const statusData = (["pendente", "em_preparacao", "pronto", "entregue", "cancelado"] as OrderStatus[])
+      .map(s => ({ status: ORDER_STATUS_LABELS[s], count: ordersByStatus[s] || 0, pct: totalOrders ? (((ordersByStatus[s] || 0) / totalOrders) * 100).toFixed(1) : "0" }))
+      .filter(d => d.count > 0);
+
+    if (statusData.length > 0) {
+      y = drawSectionTitle(doc, "Distribuição por Estado", y, brandDark);
+      y = runPDFTable(doc, {
+        startY: y,
+        head: [["Estado", "Quantidade", "Percentagem"]],
+        body: statusData.map(d => [d.status, d.count.toString(), `${d.pct}%`]),
+        theme: "grid",
+        headStyles: { fillColor: brandDark, fontSize: 8, fontStyle: "bold", textColor: white, cellPadding: 3.5 },
+        bodyStyles: { fontSize: 8, textColor: gray900, cellPadding: 3 },
+        alternateRowStyles: { fillColor: gray50 },
+        styles: { lineColor: gray200, lineWidth: 0.3 },
+        columnStyles: { 1: { halign: "center" }, 2: { halign: "center" } },
+        margin: { left: 14, right: 14 },
+      }) + 10;
     }
 
-    // --- Section Table ---
-    if (y > 220) { doc.addPage(); y = 20; }
-    y = addPDFSectionTitle(doc, "Faturação por Secção", y);
+    // === SECTION: Faturação por Secção ===
     const sectionRows = SECTIONS.map(s => [
       s, bySection[s].qty.toString(), `€${bySection[s].total.toFixed(2)}`, `€${bySection[s].vat.toFixed(2)}`, `€${(bySection[s].total + bySection[s].vat).toFixed(2)}`,
     ]).filter(r => r[1] !== "0");
 
-    y = runPDFTable(doc, {
-      startY: y,
-      head: [["Secção", "Qtd", "Subtotal", "IVA", "Total"]],
-      body: sectionRows,
-      theme: "striped",
-      ...modernTableStyles,
-      headStyles: { ...modernTableStyles.headStyles, fillColor: [195, 57, 43] as [number, number, number] },
-      columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
-    }) + 10;
-
-    // --- Top Products ---
-    if (topProducts.length > 0) {
+    if (sectionRows.length > 0) {
       if (y > 220) { doc.addPage(); y = 20; }
-      y = addPDFSectionTitle(doc, "Top 10 Produtos", y);
+      y = drawSectionTitle(doc, "Faturação por Secção", y, brandDark);
+
+      // Totals row
+      const secTotalSub = sectionRows.reduce((s, r) => s + parseFloat(r[2].replace("€", "")), 0);
+      const secTotalVat = sectionRows.reduce((s, r) => s + parseFloat(r[3].replace("€", "")), 0);
+      const secTotal = sectionRows.reduce((s, r) => s + parseFloat(r[4].replace("€", "")), 0);
+      const allRows = [...sectionRows, [{ content: "TOTAL", styles: { fontStyle: "bold" } }, { content: sectionRows.reduce((s, r) => s + parseInt(r[1]), 0).toString(), styles: { fontStyle: "bold", halign: "center" } }, { content: `€${secTotalSub.toFixed(2)}`, styles: { fontStyle: "bold", halign: "right" } }, { content: `€${secTotalVat.toFixed(2)}`, styles: { fontStyle: "bold", halign: "right" } }, { content: `€${secTotal.toFixed(2)}`, styles: { fontStyle: "bold", halign: "right" } }]];
+
       y = runPDFTable(doc, {
         startY: y,
-        head: [["#", "Produto", "Secção", "Qtd", "Total"]],
-        body: topProducts.map((p, i) => [i + 1, p.name, p.section, p.qty, `€${p.total.toFixed(2)}`]),
-        theme: "striped",
-        ...modernTableStyles,
-        headStyles: { ...modernTableStyles.headStyles, fillColor: [195, 57, 43] as [number, number, number] },
-        columnStyles: { 0: { halign: "center", cellWidth: 12 }, 3: { halign: "center" }, 4: { halign: "right" } },
+        head: [["Secção", "Qtd", "Subtotal", "IVA", "Total"]],
+        body: allRows as any,
+        theme: "grid",
+        headStyles: { fillColor: brandDark, fontSize: 8, fontStyle: "bold", textColor: white, cellPadding: 3.5 },
+        bodyStyles: { fontSize: 8, textColor: gray900, cellPadding: 3 },
+        alternateRowStyles: { fillColor: gray50 },
+        styles: { lineColor: gray200, lineWidth: 0.3 },
+        columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
+        margin: { left: 14, right: 14 },
       }) + 10;
     }
 
-    // --- By Store ---
-    if (byStore.length > 0) {
+    // === SECTION: Top 10 Produtos ===
+    if (topProducts.length > 0) {
       if (y > 220) { doc.addPage(); y = 20; }
-      y = addPDFSectionTitle(doc, "Faturação por Loja", y);
-      runPDFTable(doc, {
+      y = drawSectionTitle(doc, "Top 10 Produtos Mais Pedidos", y, brandDark);
+
+      y = runPDFTable(doc, {
         startY: y,
-        head: [["Loja", "Pedidos", "Itens", "Subtotal", "IVA", "Total"]],
-        body: byStore.map(([name, d]) => [name, d.count, d.items, `€${d.total.toFixed(2)}`, `€${d.vat.toFixed(2)}`, `€${(d.total + d.vat).toFixed(2)}`]),
-        theme: "striped",
-        ...modernTableStyles,
-        headStyles: { ...modernTableStyles.headStyles, fillColor: [195, 57, 43] as [number, number, number] },
-        columnStyles: { 1: { halign: "center" }, 2: { halign: "center" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } },
-      });
+        head: [["#", "Produto", "Secção", "Qtd", "Total"]],
+        body: topProducts.map((p, i) => [(i + 1).toString(), p.name, p.section, p.qty.toString(), `€${p.total.toFixed(2)}`]),
+        theme: "grid",
+        headStyles: { fillColor: brandLight, fontSize: 8, fontStyle: "bold", textColor: white, cellPadding: 3.5 },
+        bodyStyles: { fontSize: 8, textColor: gray900, cellPadding: 3 },
+        alternateRowStyles: { fillColor: gray50 },
+        styles: { lineColor: gray200, lineWidth: 0.3 },
+        columnStyles: { 0: { halign: "center", cellWidth: 12 }, 3: { halign: "center" }, 4: { halign: "right" } },
+        margin: { left: 14, right: 14 },
+      }) + 10;
     }
 
-    addPDFFooter(doc);
-    downloadPDF(doc, `relatorio-${new Date().toISOString().slice(0, 10)}.pdf`);
+    // === SECTION: Faturação por Loja ===
+    if (byStore.length > 0) {
+      if (y > 220) { doc.addPage(); y = 20; }
+      y = drawSectionTitle(doc, "Faturação por Loja", y, brandDark);
+
+      // Horizontal bar chart drawn manually
+      const maxStoreVal = Math.max(...byStore.map(([, d]) => d.total + d.vat), 1);
+      const barMaxW = pw - 28 - 60;
+
+      byStore.forEach(([name, d], i) => {
+        if (y > 260) { doc.addPage(); y = 20; }
+        const total = d.total + d.vat;
+        const barW = (total / maxStoreVal) * barMaxW;
+
+        // Label
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(...gray900);
+        doc.text(name, 14, y + 5);
+
+        // Bar bg
+        doc.setFillColor(...gray200);
+        doc.roundedRect(60, y + 1, barMaxW, 5, 1, 1, "F");
+
+        // Bar fill
+        doc.setFillColor(...(i % 2 === 0 ? brandDark : brandLight));
+        if (barW > 2) doc.roundedRect(60, y + 1, barW, 5, 1, 1, "F");
+
+        // Value
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7);
+        doc.text(`€${total.toFixed(2)}  (${d.count} ped.)`, 60 + barMaxW + 2, y + 5);
+
+        y += 10;
+      });
+
+      y += 8;
+    }
+
+    // === SECTION: Dados por Loja (table) ===
+    if (byStore.length > 0) {
+      if (y > 220) { doc.addPage(); y = 20; }
+      y = drawSectionTitle(doc, "Detalhe por Loja", y, brandDark);
+
+      const storeTotalSub = byStore.reduce((s, [, d]) => s + d.total, 0);
+      const storeTotalVat = byStore.reduce((s, [, d]) => s + d.vat, 0);
+
+      y = runPDFTable(doc, {
+        startY: y,
+        head: [["Loja", "Pedidos", "Itens", "Subtotal", "IVA", "Total"]],
+        body: [
+          ...byStore.map(([name, d]) => [name, d.count.toString(), d.items.toString(), `€${d.total.toFixed(2)}`, `€${d.vat.toFixed(2)}`, `€${(d.total + d.vat).toFixed(2)}`]),
+          [{ content: "TOTAL", styles: { fontStyle: "bold" } }, { content: byStore.reduce((s, [, d]) => s + d.count, 0).toString(), styles: { fontStyle: "bold", halign: "center" } }, { content: byStore.reduce((s, [, d]) => s + d.items, 0).toString(), styles: { fontStyle: "bold", halign: "center" } }, { content: `€${storeTotalSub.toFixed(2)}`, styles: { fontStyle: "bold", halign: "right" } }, { content: `€${storeTotalVat.toFixed(2)}`, styles: { fontStyle: "bold", halign: "right" } }, { content: `€${(storeTotalSub + storeTotalVat).toFixed(2)}`, styles: { fontStyle: "bold", halign: "right" } }],
+        ] as any,
+        theme: "grid",
+        headStyles: { fillColor: brandDark, fontSize: 8, fontStyle: "bold", textColor: white, cellPadding: 3.5 },
+        bodyStyles: { fontSize: 8, textColor: gray900, cellPadding: 3 },
+        alternateRowStyles: { fillColor: gray50 },
+        styles: { lineColor: gray200, lineWidth: 0.3 },
+        columnStyles: { 1: { halign: "center" }, 2: { halign: "center" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } },
+        margin: { left: 14, right: 14 },
+      }) + 10;
+    }
+
+    // === FOOTER ===
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      // Bottom bar
+      doc.setFillColor(...brandDark);
+      doc.rect(0, ph - 16, pw, 16, "F");
+      doc.setFillColor(...brandAccent);
+      doc.rect(0, ph - 16, pw, 0.8, "F");
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...white);
+      doc.text("Lost Wind Churrasqueira — Documento gerado automaticamente", 14, ph - 7);
+      doc.text(`Página ${i} de ${pageCount}`, pw - 14, ph - 7, { align: "right" });
+    }
+
+    downloadPDF(doc, `relatorio-kpi-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
+
+  function drawSectionTitle(doc: jsPDF, title: string, y: number, color: [number, number, number]): number {
+    doc.setFillColor(...color);
+    doc.rect(14, y, 3, 6, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(17, 24, 39);
+    doc.text(title, 20, y + 5);
+    doc.setDrawColor(229, 231, 235);
+    doc.line(14, y + 8, doc.internal.pageSize.getWidth() - 14, y + 8);
+    return y + 12;
+  }
 
   const tooltipStyle = {
     background: "hsl(220, 13%, 12%)",
@@ -401,7 +483,7 @@ export default function Relatorios() {
       </div>
 
       {/* Charts Row 1 */}
-      <div ref={chartsRef}>
+      <div>
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="bg-card border-border">
           <CardHeader className="pb-2"><CardTitle className="text-sm font-heading tracking-wide text-muted-foreground">Distribuição por Estado</CardTitle></CardHeader>
