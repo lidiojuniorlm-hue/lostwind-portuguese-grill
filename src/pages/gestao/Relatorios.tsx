@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrders, useProducts } from "@/hooks/useSupabaseData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,8 @@ import { SECTIONS, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, type OrderStatus } 
 import { TrendingUp, Package, ShoppingCart, Euro, Calendar, Store, BarChart3, Download, FileDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, AreaChart, Area, Legend } from "recharts";
 import jsPDF from "jspdf";
-import { createPDFHeader, addPDFFooter, runPDFTable, downloadPDF, addPDFSectionTitle, modernTableStyles } from "@/utils/pdfHelpers";
+import { addPDFFooter, runPDFTable, downloadPDF, addPDFSectionTitle, modernTableStyles } from "@/utils/pdfHelpers";
+import logoRelatorio from "@/assets/logo-relatorio.jpg";
 
 const CHART_COLORS = [
   "hsl(220, 14%, 46%)", "hsl(200, 18%, 55%)", "hsl(160, 20%, 50%)",
@@ -148,11 +149,94 @@ export default function Relatorios() {
     URL.revokeObjectURL(url);
   };
 
+  // Convert SVG chart to base64 PNG
+  const svgToImage = (svgEl: SVGSVGElement, width: number, height: number): Promise<string> => {
+    return new Promise((resolve) => {
+      const clone = svgEl.cloneNode(true) as SVGSVGElement;
+      clone.setAttribute("width", String(width));
+      clone.setAttribute("height", String(height));
+      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      // Set white background for PDF readability
+      const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      bg.setAttribute("width", "100%");
+      bg.setAttribute("height", "100%");
+      bg.setAttribute("fill", "#ffffff");
+      clone.insertBefore(bg, clone.firstChild);
+      // Fix text colors for white background
+      clone.querySelectorAll("text").forEach(t => {
+        const fill = t.getAttribute("fill");
+        if (fill && fill.includes("55%")) t.setAttribute("fill", "#555");
+      });
+      const svgData = new XMLSerializer().serializeToString(clone);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = width * 2;
+        canvas.height = height * 2;
+        const ctx = canvas.getContext("2d")!;
+        ctx.scale(2, 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/png", 0.95));
+      };
+      img.onerror = () => resolve("");
+      img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+    });
+  };
+
+  // Load logo as base64
+  const loadLogoBase64 = (): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/jpeg", 0.9));
+      };
+      img.onerror = () => resolve("");
+      img.src = logoRelatorio;
+    });
+  };
+
+  const chartsRef = useRef<HTMLDivElement>(null);
+
   const handleExportPDF = async () => {
     const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
     const periodLabel = period === "hoje" ? "Hoje" : period === "7d" ? "7 dias" : period === "30d" ? "30 dias" : period === "90d" ? "90 dias" : "Tudo";
-    let y = await createPDFHeader(doc, "Relatório de Movimentações", `Período: ${periodLabel} ${selectedStore !== "todas" ? `· Loja: ${selectedStore}` : "· Todas as lojas"}`);
 
+    // --- Modern Header with uploaded logo ---
+    const logoB64 = await loadLogoBase64();
+    doc.setFillColor(195, 57, 43); // Red brand bar
+    doc.rect(0, 0, pageWidth, 36, "F");
+
+    if (logoB64) {
+      try { doc.addImage(logoB64, "JPEG", 12, 5, 26, 26, undefined, "FAST"); } catch {}
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text("Relatório de Movimentações", 44, 16);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(255, 220, 220);
+    doc.text(`Período: ${periodLabel} ${selectedStore !== "todas" ? `· Loja: ${selectedStore}` : "· Todas as lojas"}`, 44, 23);
+
+    doc.setFontSize(7.5);
+    doc.setTextColor(255, 200, 200);
+    doc.text(`Gerado em ${new Date().toLocaleDateString("pt-PT")} às ${new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}`, 44, 29);
+
+    doc.setTextColor(40, 40, 40);
+    let y = 46;
+
+    // --- KPI Summary ---
     y = addPDFSectionTitle(doc, "Resumo Geral", y);
     const kpis = [
       ["Pedidos", totalOrders.toString()],
@@ -169,10 +253,40 @@ export default function Relatorios() {
       body: [kpis.map(k => k[1])],
       theme: "grid",
       ...modernTableStyles,
-      headStyles: { ...modernTableStyles.headStyles },
+      headStyles: { ...modernTableStyles.headStyles, fillColor: [195, 57, 43] as [number, number, number] },
       bodyStyles: { ...modernTableStyles.bodyStyles, halign: "center", fontStyle: "bold" },
-    }) + 10;
+    }) + 8;
 
+    // --- Capture Charts from DOM ---
+    if (chartsRef.current) {
+      const svgs = chartsRef.current.querySelectorAll<SVGSVGElement>(".recharts-wrapper svg");
+      const chartImages: string[] = [];
+      for (const svg of Array.from(svgs)) {
+        const rect = svg.getBoundingClientRect();
+        const img = await svgToImage(svg, rect.width, rect.height);
+        if (img) chartImages.push(img);
+      }
+
+      // Place charts 2 per row
+      const chartW = (pageWidth - 28 - 6) / 2;
+      const chartH = 55;
+      for (let i = 0; i < chartImages.length; i++) {
+        const col = i % 2;
+        if (i % 2 === 0 && i > 0) y += chartH + 8;
+        if (y + chartH > 270) { doc.addPage(); y = 20; }
+        const x = 14 + col * (chartW + 6);
+        try {
+          // Draw chart border
+          doc.setDrawColor(220, 220, 220);
+          doc.roundedRect(x, y, chartW, chartH, 2, 2, "S");
+          doc.addImage(chartImages[i], "PNG", x + 1, y + 1, chartW - 2, chartH - 2, undefined, "FAST");
+        } catch {}
+      }
+      if (chartImages.length > 0) y += chartH + 10;
+    }
+
+    // --- Section Table ---
+    if (y > 220) { doc.addPage(); y = 20; }
     y = addPDFSectionTitle(doc, "Faturação por Secção", y);
     const sectionRows = SECTIONS.map(s => [
       s, bySection[s].qty.toString(), `€${bySection[s].total.toFixed(2)}`, `€${bySection[s].vat.toFixed(2)}`, `€${(bySection[s].total + bySection[s].vat).toFixed(2)}`,
@@ -184,9 +298,11 @@ export default function Relatorios() {
       body: sectionRows,
       theme: "striped",
       ...modernTableStyles,
+      headStyles: { ...modernTableStyles.headStyles, fillColor: [195, 57, 43] as [number, number, number] },
       columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
     }) + 10;
 
+    // --- Top Products ---
     if (topProducts.length > 0) {
       if (y > 220) { doc.addPage(); y = 20; }
       y = addPDFSectionTitle(doc, "Top 10 Produtos", y);
@@ -196,10 +312,12 @@ export default function Relatorios() {
         body: topProducts.map((p, i) => [i + 1, p.name, p.section, p.qty, `€${p.total.toFixed(2)}`]),
         theme: "striped",
         ...modernTableStyles,
+        headStyles: { ...modernTableStyles.headStyles, fillColor: [195, 57, 43] as [number, number, number] },
         columnStyles: { 0: { halign: "center", cellWidth: 12 }, 3: { halign: "center" }, 4: { halign: "right" } },
       }) + 10;
     }
 
+    // --- By Store ---
     if (byStore.length > 0) {
       if (y > 220) { doc.addPage(); y = 20; }
       y = addPDFSectionTitle(doc, "Faturação por Loja", y);
@@ -209,6 +327,7 @@ export default function Relatorios() {
         body: byStore.map(([name, d]) => [name, d.count, d.items, `€${d.total.toFixed(2)}`, `€${d.vat.toFixed(2)}`, `€${(d.total + d.vat).toFixed(2)}`]),
         theme: "striped",
         ...modernTableStyles,
+        headStyles: { ...modernTableStyles.headStyles, fillColor: [195, 57, 43] as [number, number, number] },
         columnStyles: { 1: { halign: "center" }, 2: { halign: "center" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } },
       });
     }
@@ -282,6 +401,7 @@ export default function Relatorios() {
       </div>
 
       {/* Charts Row 1 */}
+      <div ref={chartsRef}>
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="bg-card border-border">
           <CardHeader className="pb-2"><CardTitle className="text-sm font-heading tracking-wide text-muted-foreground">Distribuição por Estado</CardTitle></CardHeader>
@@ -361,8 +481,9 @@ export default function Relatorios() {
           </CardContent>
         </Card>
       </div>
+      </div>
 
-      {/* Top Products */}
+
       <Card className="bg-card border-border">
         <CardHeader className="pb-2"><CardTitle className="text-sm font-heading tracking-wide text-muted-foreground">Top 10 Produtos</CardTitle></CardHeader>
         <CardContent>
