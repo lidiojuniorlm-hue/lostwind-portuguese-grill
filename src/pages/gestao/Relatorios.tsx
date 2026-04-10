@@ -481,8 +481,9 @@ export default function Relatorios() {
           </CardContent>
         </Card>
       </div>
+      </div>
 
-      {/* Top Products */}
+
       <Card className="bg-card border-border">
         <CardHeader className="pb-2"><CardTitle className="text-sm font-heading tracking-wide text-muted-foreground">Top 10 Produtos</CardTitle></CardHeader>
         <CardContent>
