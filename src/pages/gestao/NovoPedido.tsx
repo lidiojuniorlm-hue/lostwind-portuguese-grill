@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Minus, Trash2, Send, ShoppingCart, Loader2, Search } from "lucide-react";
+import { Plus, Minus, Trash2, Send, ShoppingCart, Loader2, Search, Share2, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface CartItem {
   productId: string;
@@ -29,6 +30,8 @@ export default function NovoPedido() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [notes, setNotes] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [lastOrderText, setLastOrderText] = useState("");
 
   if (!user || user.role !== "funcionario") return null;
 
@@ -71,8 +74,48 @@ export default function NovoPedido() {
   const totalVat = cart.reduce((sum, i) => sum + i.unitPrice * i.qty * (i.vatRate / 100), 0);
   const total = subtotal + totalVat;
 
+  const buildOrderText = (cartItems: CartItem[]) => {
+    const now = new Date();
+    const date = now.toLocaleDateString("pt-PT");
+    const time = now.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" });
+    const storeName = user.store || user.name;
+
+    let text = `📋 *PEDIDO — ${storeName}*\n`;
+    text += `👤 ${user.name}\n`;
+    text += `📅 ${date} às ${time}\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    const grouped: Record<string, CartItem[]> = {};
+    cartItems.forEach((item) => {
+      if (!grouped[item.section]) grouped[item.section] = [];
+      grouped[item.section].push(item);
+    });
+
+    Object.entries(grouped).forEach(([section, items]) => {
+      text += `📦 *${section}*\n`;
+      items.forEach((item) => {
+        text += `  • ${item.qty} ${item.unit} — ${item.productName}\n`;
+      });
+      text += `\n`;
+    });
+
+    text += `━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `🛒 Total: ${cartItems.length} produtos\n`;
+    if (notes.trim()) {
+      text += `\n📝 *Obs:* ${notes}\n`;
+    }
+    text += `\n_Enviado via Lost Wind Gestão_`;
+    return text;
+  };
+
+  const shareToWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(lastOrderText)}`;
+    window.open(url, "_blank");
+  };
+
   const handleSubmit = async () => {
     if (cart.length === 0) { toast.error("Adicione produtos ao pedido!"); return; }
+    const orderText = buildOrderText(cart);
     try {
       await createOrder.mutateAsync({
         order: {
@@ -98,7 +141,8 @@ export default function NovoPedido() {
         details: `${cart.length} itens para ${user.store || user.name}`,
       });
       toast.success("Pedido enviado ao armazém!");
-      navigate("/gestao/pedidos");
+      setLastOrderText(orderText);
+      setShowShareDialog(true);
     } catch (e: any) {
       toast.error(e.message || "Erro ao criar pedido");
     }
@@ -194,6 +238,31 @@ export default function NovoPedido() {
           </div>
         </div>
       </div>
+
+      {/* WhatsApp Share Dialog */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Check className="w-5 h-5 text-green-500" /> Pedido Enviado!
+            </DialogTitle>
+            <DialogDescription>
+              Partilhe uma cópia do pedido por WhatsApp.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-muted rounded-lg p-3 max-h-60 overflow-auto">
+            <pre className="text-xs whitespace-pre-wrap text-foreground font-sans">{lastOrderText}</pre>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={shareToWhatsApp} className="flex-1 bg-[#25D366] hover:bg-[#20bd5a] text-white">
+              <Share2 className="w-4 h-4 mr-2" /> Enviar por WhatsApp
+            </Button>
+            <Button variant="outline" onClick={() => { setShowShareDialog(false); navigate("/gestao/pedidos"); }}>
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

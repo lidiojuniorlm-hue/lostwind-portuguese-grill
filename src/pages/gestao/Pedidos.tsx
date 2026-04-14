@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, OrderStatus, SECTIONS } from "@/types/warehouse";
-import { ChevronDown, ChevronUp, Printer, FileText, Save, History, CalendarDays, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Printer, FileText, Save, History, CalendarDays, Trash2, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { getLogoBase64 } from "@/utils/logoBase64";
 
@@ -194,6 +194,43 @@ export default function Pedidos() {
         <script>window.onload=function(){window.print();}<\/script>
       </body></html>`);
     printWindow.document.close();
+  };
+
+  const handleShareWhatsApp = (orderId: string) => {
+    const order = orders.find((o: any) => o.id === orderId);
+    if (!order) return;
+    const items = ((order as any).items || []).sort((a: any, b: any) => a.product_name.localeCompare(b.product_name));
+    const createdByUser = users?.find((u: any) => u.id === (order as any).created_by);
+    const date = new Date((order as any).created_at).toLocaleDateString("pt-PT");
+    const time = new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" });
+
+    let text = `📋 *PEDIDO — ${(order as any).store_name}*\n`;
+    text += `👤 ${createdByUser?.name || "Funcionário"}\n`;
+    text += `📅 ${date} às ${time}\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    const grouped: Record<string, any[]> = {};
+    items.forEach((item: any) => {
+      if (!grouped[item.section]) grouped[item.section] = [];
+      grouped[item.section].push(item);
+    });
+
+    Object.entries(grouped).forEach(([section, sItems]) => {
+      text += `📦 *${section}*\n`;
+      sItems.forEach((item: any) => {
+        text += `  • ${item.actual_qty ?? item.qty} ${item.unit} — ${item.product_name}\n`;
+      });
+      text += `\n`;
+    });
+
+    text += `━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `🛒 Total: ${items.length} produtos\n`;
+    if ((order as any).notes) {
+      text += `\n📝 *Obs:* ${(order as any).notes}\n`;
+    }
+    text += `\n_Enviado via Lost Wind Gestão_`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   // Print: Conference sheet
@@ -391,6 +428,7 @@ export default function Pedidos() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
+                      <span role="button" onClick={(e) => { e.stopPropagation(); handleShareWhatsApp(order.id); }} className="p-1.5 rounded-md hover:bg-muted transition-colors text-green-500 hover:text-green-400" title="WhatsApp"><Share2 className="w-4 h-4" /></span>
                       <span role="button" onClick={(e) => { e.stopPropagation(); handlePrint(order.id); }} className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Imprimir"><Printer className="w-4 h-4" /></span>
                       {(order.status === "pronto" || order.status === "entregue") && (
                         <span role="button" onClick={(e) => { e.stopPropagation(); handlePrintGuia(order.id); }} className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Guia"><FileText className="w-4 h-4" /></span>
@@ -466,6 +504,7 @@ export default function Pedidos() {
                       </div>
 
                       <div className="flex flex-wrap gap-2 pt-2">
+                        <Button size="sm" variant="outline" onClick={() => handleShareWhatsApp(order.id)} className="text-xs text-green-500 border-green-500/30 hover:bg-green-500/10"><Share2 className="w-3 h-3 mr-1" /> WhatsApp</Button>
                         <Button size="sm" variant="outline" onClick={() => handlePrint(order.id)} className="text-xs"><Printer className="w-3 h-3 mr-1" /> Imprimir</Button>
                         {(order.status === "pronto" || order.status === "entregue") && (
                           <Button size="sm" variant="outline" onClick={() => handlePrintGuia(order.id)} className="text-xs"><FileText className="w-3 h-3 mr-1" /> Guia</Button>
