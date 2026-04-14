@@ -109,14 +109,8 @@ export default function NovoPedido() {
   };
 
   const shareToWhatsApp = () => {
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(lastOrderText)}`;
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const url = `https://wa.me/?text=${encodeURIComponent(lastOrderText)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleSubmit = async () => {
