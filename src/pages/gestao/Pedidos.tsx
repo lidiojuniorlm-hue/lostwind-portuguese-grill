@@ -196,6 +196,43 @@ export default function Pedidos() {
     printWindow.document.close();
   };
 
+  const handleShareWhatsApp = (orderId: string) => {
+    const order = orders.find((o: any) => o.id === orderId);
+    if (!order) return;
+    const items = ((order as any).items || []).sort((a: any, b: any) => a.product_name.localeCompare(b.product_name));
+    const createdByUser = users?.find((u: any) => u.id === (order as any).created_by);
+    const date = new Date((order as any).created_at).toLocaleDateString("pt-PT");
+    const time = new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" });
+
+    let text = `📋 *PEDIDO — ${(order as any).store_name}*\n`;
+    text += `👤 ${createdByUser?.name || "Funcionário"}\n`;
+    text += `📅 ${date} às ${time}\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    const grouped: Record<string, any[]> = {};
+    items.forEach((item: any) => {
+      if (!grouped[item.section]) grouped[item.section] = [];
+      grouped[item.section].push(item);
+    });
+
+    Object.entries(grouped).forEach(([section, sItems]) => {
+      text += `📦 *${section}*\n`;
+      sItems.forEach((item: any) => {
+        text += `  • ${item.actual_qty ?? item.qty} ${item.unit} — ${item.product_name}\n`;
+      });
+      text += `\n`;
+    });
+
+    text += `━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `🛒 Total: ${items.length} produtos\n`;
+    if ((order as any).notes) {
+      text += `\n📝 *Obs:* ${(order as any).notes}\n`;
+    }
+    text += `\n_Enviado via Lost Wind Gestão_`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
   // Print: Conference sheet
   const handlePrint = async (orderId: string) => {
     const order = orders.find((o: any) => o.id === orderId);
