@@ -230,7 +230,14 @@ export default function Pedidos() {
     }
     text += `\n_Enviado via Lost Wind Gestão_`;
 
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   // Print: Conference sheet
