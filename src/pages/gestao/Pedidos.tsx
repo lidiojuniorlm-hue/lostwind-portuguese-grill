@@ -504,6 +504,7 @@ export default function Pedidos() {
                       </div>
 
                       <div className="flex flex-wrap gap-2 pt-2">
+                        <Button size="sm" variant="outline" onClick={() => handleShareWhatsApp(order.id)} className="text-xs text-green-500 border-green-500/30 hover:bg-green-500/10"><Share2 className="w-3 h-3 mr-1" /> WhatsApp</Button>
                         <Button size="sm" variant="outline" onClick={() => handlePrint(order.id)} className="text-xs"><Printer className="w-3 h-3 mr-1" /> Imprimir</Button>
                         {(order.status === "pronto" || order.status === "entregue") && (
                           <Button size="sm" variant="outline" onClick={() => handlePrintGuia(order.id)} className="text-xs"><FileText className="w-3 h-3 mr-1" /> Guia</Button>
