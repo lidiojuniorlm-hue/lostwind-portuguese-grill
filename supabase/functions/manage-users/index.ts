@@ -14,9 +14,9 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify caller is admin
+    // Verify caller using the anon client with their auth header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization" }), {
@@ -26,22 +26,30 @@ Deno.serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const {
-      data: { user: caller },
-      error: userError,
-    } = await supabaseAdmin.auth.getUser(token);
-    if (userError || !caller) {
+
+    // Use anon client with user's auth context to validate token
+    const supabaseUser = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const callerId = claimsData.claims.sub;
+
+    // Admin client for privileged operations
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
     // Check admin role
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", caller.id)
+      .eq("user_id", callerId)
       .single();
 
     if (!roleData || roleData.role !== "admin") {
@@ -105,7 +113,6 @@ Deno.serve(async (req) => {
         });
       if (createErr) throw createErr;
 
-      // Assign role
       const { error: roleErr } = await supabaseAdmin
         .from("user_roles")
         .insert({
@@ -155,7 +162,6 @@ Deno.serve(async (req) => {
         if (updateErr) throw updateErr;
       }
 
-      // Update role
       if (role) {
         const { error: roleErr } = await supabaseAdmin
           .from("user_roles")
@@ -164,7 +170,6 @@ Deno.serve(async (req) => {
             { onConflict: "user_id" }
           );
         if (roleErr) {
-          // If upsert fails due to no unique constraint on user_id, try delete+insert
           await supabaseAdmin
             .from("user_roles")
             .delete()
@@ -193,7 +198,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      if (userId === caller.id) {
+      if (userId === callerId) {
         return new Response(
           JSON.stringify({ error: "Cannot delete yourself" }),
           {
@@ -203,7 +208,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Delete role first
       await supabaseAdmin
         .from("user_roles")
         .delete()
