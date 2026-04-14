@@ -30,6 +30,8 @@ export default function NovoPedido() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [notes, setNotes] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [lastOrderText, setLastOrderText] = useState("");
 
   if (!user || user.role !== "funcionario") return null;
 
