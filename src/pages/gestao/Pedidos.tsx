@@ -428,6 +428,7 @@ export default function Pedidos() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
+                      <span role="button" onClick={(e) => { e.stopPropagation(); handleShareWhatsApp(order.id); }} className="p-1.5 rounded-md hover:bg-muted transition-colors text-green-500 hover:text-green-400" title="WhatsApp"><Share2 className="w-4 h-4" /></span>
                       <span role="button" onClick={(e) => { e.stopPropagation(); handlePrint(order.id); }} className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Imprimir"><Printer className="w-4 h-4" /></span>
                       {(order.status === "pronto" || order.status === "entregue") && (
                         <span role="button" onClick={(e) => { e.stopPropagation(); handlePrintGuia(order.id); }} className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Guia"><FileText className="w-4 h-4" /></span>
