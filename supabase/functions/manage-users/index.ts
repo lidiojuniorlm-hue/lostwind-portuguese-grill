@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
 
     // Verify caller using the anon client with their auth header
     const authHeader = req.headers.get("Authorization");
@@ -25,25 +25,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    const token = authHeader.replace("Bearer ", "");
+    // Admin client for privileged operations
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    // Use anon client with user's auth context to validate token
-    const supabaseUser = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    // Validate token using admin client's getUser
+    const { data: { user: callerUser }, error: userError } = await supabaseAdmin.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (userError || !callerUser) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const callerId = claimsData.claims.sub;
-
-    // Admin client for privileged operations
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    const callerId = callerUser.id;
 
     // Check admin role
     const { data: roleData } = await supabaseAdmin
