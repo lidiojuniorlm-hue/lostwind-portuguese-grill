@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Minus, Trash2, Send, ShoppingCart, Loader2, Search } from "lucide-react";
+import { Plus, Minus, Trash2, Send, ShoppingCart, Loader2, Search, Share2, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface CartItem {
   productId: string;
