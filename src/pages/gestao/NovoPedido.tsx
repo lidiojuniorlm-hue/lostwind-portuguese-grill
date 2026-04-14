@@ -74,8 +74,48 @@ export default function NovoPedido() {
   const totalVat = cart.reduce((sum, i) => sum + i.unitPrice * i.qty * (i.vatRate / 100), 0);
   const total = subtotal + totalVat;
 
+  const buildOrderText = (cartItems: CartItem[]) => {
+    const now = new Date();
+    const date = now.toLocaleDateString("pt-PT");
+    const time = now.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" });
+    const storeName = user.store || user.name;
+
+    let text = `📋 *PEDIDO — ${storeName}*\n`;
+    text += `👤 ${user.name}\n`;
+    text += `📅 ${date} às ${time}\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    const grouped: Record<string, CartItem[]> = {};
+    cartItems.forEach((item) => {
+      if (!grouped[item.section]) grouped[item.section] = [];
+      grouped[item.section].push(item);
+    });
+
+    Object.entries(grouped).forEach(([section, items]) => {
+      text += `📦 *${section}*\n`;
+      items.forEach((item) => {
+        text += `  • ${item.qty} ${item.unit} — ${item.productName}\n`;
+      });
+      text += `\n`;
+    });
+
+    text += `━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `🛒 Total: ${cartItems.length} produtos\n`;
+    if (notes.trim()) {
+      text += `\n📝 *Obs:* ${notes}\n`;
+    }
+    text += `\n_Enviado via Lost Wind Gestão_`;
+    return text;
+  };
+
+  const shareToWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(lastOrderText)}`;
+    window.open(url, "_blank");
+  };
+
   const handleSubmit = async () => {
     if (cart.length === 0) { toast.error("Adicione produtos ao pedido!"); return; }
+    const orderText = buildOrderText(cart);
     try {
       await createOrder.mutateAsync({
         order: {
@@ -101,7 +141,8 @@ export default function NovoPedido() {
         details: `${cart.length} itens para ${user.store || user.name}`,
       });
       toast.success("Pedido enviado ao armazém!");
-      navigate("/gestao/pedidos");
+      setLastOrderText(orderText);
+      setShowShareDialog(true);
     } catch (e: any) {
       toast.error(e.message || "Erro ao criar pedido");
     }
