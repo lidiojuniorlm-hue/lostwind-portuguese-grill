@@ -238,6 +238,31 @@ export default function NovoPedido() {
           </div>
         </div>
       </div>
+
+      {/* WhatsApp Share Dialog */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Check className="w-5 h-5 text-green-500" /> Pedido Enviado!
+            </DialogTitle>
+            <DialogDescription>
+              Partilhe uma cópia do pedido por WhatsApp.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-muted rounded-lg p-3 max-h-60 overflow-auto">
+            <pre className="text-xs whitespace-pre-wrap text-foreground font-sans">{lastOrderText}</pre>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={shareToWhatsApp} className="flex-1 bg-[#25D366] hover:bg-[#20bd5a] text-white">
+              <Share2 className="w-4 h-4 mr-2" /> Enviar por WhatsApp
+            </Button>
+            <Button variant="outline" onClick={() => { setShowShareDialog(false); navigate("/gestao/pedidos"); }}>
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
