@@ -31,10 +31,11 @@ export default function Relatorios() {
   const { data: products = [] } = useProducts();
   const [period, setPeriod] = useState<"hoje" | "ontem" | "7d" | "30d" | "90d" | "all">("30d");
 
-  // Items measured by weight/volume count as 1 unit per line (the qty is the weight, not the count)
+  // Para KPIs: contamos UNIDADES PEDIDAS pela loja (qty original, não actual_qty/peso real).
+  // Itens vendidos por peso/volume (kg, g, l, ml...) contam como 1 unidade por linha.
   const WEIGHT_UNITS = new Set(["kg", "g", "l", "ml", "lt", "gr"]);
   const isWeightUnit = (unit: string) => WEIGHT_UNITS.has((unit || "").toLowerCase().trim());
-  const itemUnitCount = (item: any) => (isWeightUnit(item.unit) ? 1 : Number(item.actual_qty ?? item.qty));
+  const itemUnitCount = (item: any) => (isWeightUnit(item.unit) ? 1 : Number(item.qty) || 0);
   const [selectedStore, setSelectedStore] = useState<string>("todas");
 
   const stores = useMemo(() => Array.from(new Set(orders.map((o: any) => o.store_name))).sort(), [orders]);
