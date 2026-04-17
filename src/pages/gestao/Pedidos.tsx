@@ -44,6 +44,7 @@ export default function Pedidos() {
   const [filterStatus, setFilterStatus] = useState<OrderStatus | "todos">("todos");
   const [editingItems, setEditingItems] = useState<Record<string, EditItem[]>>({});
   const [viewMode, setViewMode] = useState<"hoje" | "historico">("hoje");
+  const [selectedHistoryStore, setSelectedHistoryStore] = useState<string>("todas");
 
   if (!user) return null;
 
@@ -61,7 +62,13 @@ export default function Pedidos() {
   const todayOrders = filteredOrders.filter((o: any) => new Date(o.created_at) >= today);
   const historicOrders = filteredOrders.filter((o: any) => new Date(o.created_at) < today);
 
-  const activeOrders = viewMode === "hoje" ? todayOrders : historicOrders;
+  const historyStores = Array.from(new Set(historicOrders.map((o: any) => o.store_name))).sort() as string[];
+
+  const historicFilteredByStore = selectedHistoryStore === "todas"
+    ? historicOrders
+    : historicOrders.filter((o: any) => o.store_name === selectedHistoryStore);
+
+  const activeOrders = viewMode === "hoje" ? todayOrders : historicFilteredByStore;
 
   const sortedOrders = [...activeOrders].sort(
     (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -93,9 +100,10 @@ export default function Pedidos() {
 
   const statusFlow: OrderStatus[] = ["pendente", "em_preparacao", "pronto", "entregue"];
 
-  const canEditActuals = (status: OrderStatus) =>
-    (user.role === "armazem" || user.role === "admin") &&
-    (status === "em_preparacao" || status === "pronto");
+  const canEditActuals = (status: OrderStatus) => {
+    if (user.role === "admin") return true; // admin can always edit
+    return user.role === "armazem" && (status === "em_preparacao" || status === "pronto");
+  };
 
   const startEditing = (orderId: string, items: any[]) => {
     setEditingItems((prev) => ({
@@ -278,7 +286,7 @@ export default function Pedidos() {
 
         const realQtyContent = showReadyValues
           ? `<span style="font-weight:600;color:#2f2f2f;">${actualQtyValue}</span><span style="display:inline-block;width:6px;"></span><span style="font-size:10px;color:#2a2a2a;">${actualUnitLabel}</span>`
-          : `<span style="display:inline-block;width:92px;border-bottom:1px solid #7a7a7a;height:14px;"></span>`;
+          : `<span style="display:inline-block;width:92px;height:14px;"></span>`;
 
         const priceCol = showReadyValues
           ? `<td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:right;font-size:11px;color:#2a2a2a;">€${unitPriceSemIva.toFixed(2)}</td>
@@ -289,8 +297,8 @@ export default function Pedidos() {
           <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;width:40px;">
             <div style="width:16px;height:16px;border:2px solid #666;border-radius:3px;display:inline-block;"></div>
           </td>
+          <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;font-size:13px;color:#2a2a2a;font-weight:700;width:50px;">${qtyValue}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;font-weight:500;">${item.product_name}</td>
-          <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:13px;color:#2a2a2a;font-weight:700;">${qtyValue}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${realQtyContent}</td>
           ${priceCol}
         </tr>`;
@@ -306,9 +314,9 @@ export default function Pedidos() {
         <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
           <thead><tr style="background:#f5f5f5;">
             <th style="padding:5px 6px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:40px;">✓</th>
+            <th style="padding:5px 6px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:50px;">Qtd</th>
             <th style="padding:5px 8px;font-size:9px;text-align:left;border:1px solid #d7d7d7;">Produto</th>
-            <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:70px;">Qtd</th>
-            <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:130px;">Qtd Real / Peso</th>
+            <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:130px;">Peso / Qtd Real</th>
             ${priceHeaders}
           </tr></thead>
           <tbody>${rows}</tbody>
@@ -389,12 +397,39 @@ export default function Pedidos() {
         ))}
       </div>
 
+      {viewMode === "historico" && historyStores.length > 0 && (
+        <div className="border-b border-border">
+          <div className="flex flex-wrap gap-1 -mb-px">
+            <button
+              onClick={() => setSelectedHistoryStore("todas")}
+              className={`text-xs px-4 py-2 border-b-2 transition-all font-medium ${selectedHistoryStore === "todas" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            >
+              Todas <span className="opacity-60">({historicOrders.length})</span>
+            </button>
+            {historyStores.map((store) => {
+              const count = historicOrders.filter((o: any) => o.store_name === store).length;
+              return (
+                <button
+                  key={store}
+                  onClick={() => setSelectedHistoryStore(store)}
+                  className={`text-xs px-4 py-2 border-b-2 transition-all font-medium ${selectedHistoryStore === store ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                >
+                  {store} <span className="opacity-60">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {sortedOrders.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-12">{viewMode === "hoje" ? "Nenhum pedido hoje" : "Nenhum pedido no histórico"}</p>
       ) : (
         <div className="space-y-3">
           {viewMode === "historico" && (
-            <p className="text-xs text-muted-foreground">Pedidos anteriores a hoje</p>
+            <p className="text-xs text-muted-foreground">
+              {selectedHistoryStore === "todas" ? "Pedidos anteriores a hoje (todas as lojas)" : `Histórico — ${selectedHistoryStore}`}
+            </p>
           )}
           {sortedOrders.map((order: any) => {
             const expanded = expandedOrder === order.id;

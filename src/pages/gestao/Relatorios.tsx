@@ -29,7 +29,12 @@ export default function Relatorios() {
   const { user } = useAuth();
   const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
   const { data: products = [] } = useProducts();
-  const [period, setPeriod] = useState<"hoje" | "7d" | "30d" | "90d" | "all">("30d");
+  const [period, setPeriod] = useState<"hoje" | "ontem" | "7d" | "30d" | "90d" | "all">("30d");
+
+  // Items measured by weight/volume count as 1 unit per line (the qty is the weight, not the count)
+  const WEIGHT_UNITS = new Set(["kg", "g", "l", "ml", "lt", "gr"]);
+  const isWeightUnit = (unit: string) => WEIGHT_UNITS.has((unit || "").toLowerCase().trim());
+  const itemUnitCount = (item: any) => (isWeightUnit(item.unit) ? 1 : Number(item.actual_qty ?? item.qty));
   const [selectedStore, setSelectedStore] = useState<string>("todas");
 
   const stores = useMemo(() => Array.from(new Set(orders.map((o: any) => o.store_name))).sort(), [orders]);
@@ -40,6 +45,10 @@ export default function Relatorios() {
     if (period === "hoje") {
       const today = new Date().toLocaleDateString("pt-PT");
       result = result.filter((o: any) => new Date(o.created_at).toLocaleDateString("pt-PT") === today);
+    } else if (period === "ontem") {
+      const y = new Date(); y.setDate(y.getDate() - 1);
+      const yest = y.toLocaleDateString("pt-PT");
+      result = result.filter((o: any) => new Date(o.created_at).toLocaleDateString("pt-PT") === yest);
     } else if (period !== "all") {
       const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
       const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
@@ -49,7 +58,7 @@ export default function Relatorios() {
   }, [orders, period, selectedStore]);
 
   const totalOrders = filteredOrders.length;
-  const totalItems = filteredOrders.reduce((s: number, o: any) => s + (o.items || []).reduce((si: number, i: any) => si + getEffective(i).qty, 0), 0);
+  const totalItems = filteredOrders.reduce((s: number, o: any) => s + (o.items || []).reduce((si: number, i: any) => si + itemUnitCount(i), 0), 0);
   const totalSubtotal = filteredOrders.reduce((s: number, o: any) => s + (o.items || []).reduce((si: number, i: any) => si + getEffective(i).subtotal, 0), 0);
   const totalVat = filteredOrders.reduce((s: number, o: any) => s + (o.items || []).reduce((si: number, i: any) => si + getEffective(i).vat, 0), 0);
   const totalValue = totalSubtotal + totalVat;
@@ -73,7 +82,7 @@ export default function Relatorios() {
     filteredOrders.forEach((o: any) => (o.items || []).forEach((i: any) => {
       const e = getEffective(i);
       if (!map[i.product_id]) map[i.product_id] = { name: i.product_name, qty: 0, total: 0, section: i.section };
-      map[i.product_id].qty += e.qty;
+      map[i.product_id].qty += itemUnitCount(i);
       map[i.product_id].total += e.subtotal;
     }));
     return Object.values(map).sort((a, b) => b.total - a.total).slice(0, 10);
@@ -85,7 +94,7 @@ export default function Relatorios() {
     filteredOrders.forEach((o: any) => (o.items || []).forEach((i: any) => {
       const e = getEffective(i);
       if (map[i.section]) {
-        map[i.section].qty += e.qty;
+        map[i.section].qty += itemUnitCount(i);
         map[i.section].total += e.subtotal;
         map[i.section].vat += e.vat;
       }
@@ -107,7 +116,7 @@ export default function Relatorios() {
         const e = getEffective(i);
         map[o.store_name].total += e.subtotal;
         map[o.store_name].vat += e.vat;
-        map[o.store_name].items += e.qty;
+        map[o.store_name].items += itemUnitCount(i);
       });
     });
     return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
@@ -171,7 +180,7 @@ export default function Relatorios() {
     const doc = new jsPDF();
     const pw = doc.internal.pageSize.getWidth();
     const ph = doc.internal.pageSize.getHeight();
-    const periodLabel = period === "hoje" ? "Hoje" : period === "7d" ? "7 dias" : period === "30d" ? "30 dias" : period === "90d" ? "90 dias" : "Tudo";
+    const periodLabel = period === "hoje" ? "Hoje" : period === "ontem" ? "Ontem" : period === "7d" ? "7 dias" : period === "30d" ? "30 dias" : period === "90d" ? "90 dias" : "Tudo";
     const logoB64 = await loadLogoBase64();
 
     const brandDark = [30, 58, 82] as [number, number, number];   // dark teal
@@ -443,9 +452,9 @@ export default function Relatorios() {
       <div className="flex flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-muted-foreground" />
-          {(["hoje", "7d", "30d", "90d", "all"] as const).map(p => (
+          {(["hoje", "ontem", "7d", "30d", "90d", "all"] as const).map(p => (
             <button key={p} onClick={() => setPeriod(p)} className={`text-xs px-3 py-1.5 rounded-lg border transition-all font-normal ${period === p ? "bg-primary/20 border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
-              {p === "hoje" ? "Hoje" : p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : p === "90d" ? "90 dias" : "Tudo"}
+              {p === "hoje" ? "Hoje" : p === "ontem" ? "Ontem" : p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : p === "90d" ? "90 dias" : "Tudo"}
             </button>
           ))}
         </div>
