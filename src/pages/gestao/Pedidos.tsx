@@ -44,6 +44,7 @@ export default function Pedidos() {
   const [filterStatus, setFilterStatus] = useState<OrderStatus | "todos">("todos");
   const [editingItems, setEditingItems] = useState<Record<string, EditItem[]>>({});
   const [viewMode, setViewMode] = useState<"hoje" | "historico">("hoje");
+  const [selectedHistoryStore, setSelectedHistoryStore] = useState<string>("todas");
 
   if (!user) return null;
 
@@ -61,7 +62,16 @@ export default function Pedidos() {
   const todayOrders = filteredOrders.filter((o: any) => new Date(o.created_at) >= today);
   const historicOrders = filteredOrders.filter((o: any) => new Date(o.created_at) < today);
 
-  const activeOrders = viewMode === "hoje" ? todayOrders : historicOrders;
+  const historyStores = useMemo(
+    () => Array.from(new Set(historicOrders.map((o: any) => o.store_name))).sort() as string[],
+    [historicOrders]
+  );
+
+  const historicFilteredByStore = selectedHistoryStore === "todas"
+    ? historicOrders
+    : historicOrders.filter((o: any) => o.store_name === selectedHistoryStore);
+
+  const activeOrders = viewMode === "hoje" ? todayOrders : historicFilteredByStore;
 
   const sortedOrders = [...activeOrders].sort(
     (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
