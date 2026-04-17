@@ -62,10 +62,7 @@ export default function Pedidos() {
   const todayOrders = filteredOrders.filter((o: any) => new Date(o.created_at) >= today);
   const historicOrders = filteredOrders.filter((o: any) => new Date(o.created_at) < today);
 
-  const historyStores = useMemo(
-    () => Array.from(new Set(historicOrders.map((o: any) => o.store_name))).sort() as string[],
-    [historicOrders]
-  );
+  const historyStores = Array.from(new Set(historicOrders.map((o: any) => o.store_name))).sort() as string[];
 
   const historicFilteredByStore = selectedHistoryStore === "todas"
     ? historicOrders
