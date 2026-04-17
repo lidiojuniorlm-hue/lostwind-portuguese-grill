@@ -29,7 +29,12 @@ export default function Relatorios() {
   const { user } = useAuth();
   const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
   const { data: products = [] } = useProducts();
-  const [period, setPeriod] = useState<"hoje" | "7d" | "30d" | "90d" | "all">("30d");
+  const [period, setPeriod] = useState<"hoje" | "ontem" | "7d" | "30d" | "90d" | "all">("30d");
+
+  // Items measured by weight/volume count as 1 unit per line (the qty is the weight, not the count)
+  const WEIGHT_UNITS = new Set(["kg", "g", "l", "ml", "lt", "gr"]);
+  const isWeightUnit = (unit: string) => WEIGHT_UNITS.has((unit || "").toLowerCase().trim());
+  const itemUnitCount = (item: any) => (isWeightUnit(item.unit) ? 1 : Number(item.actual_qty ?? item.qty));
   const [selectedStore, setSelectedStore] = useState<string>("todas");
 
   const stores = useMemo(() => Array.from(new Set(orders.map((o: any) => o.store_name))).sort(), [orders]);
@@ -40,6 +45,10 @@ export default function Relatorios() {
     if (period === "hoje") {
       const today = new Date().toLocaleDateString("pt-PT");
       result = result.filter((o: any) => new Date(o.created_at).toLocaleDateString("pt-PT") === today);
+    } else if (period === "ontem") {
+      const y = new Date(); y.setDate(y.getDate() - 1);
+      const yest = y.toLocaleDateString("pt-PT");
+      result = result.filter((o: any) => new Date(o.created_at).toLocaleDateString("pt-PT") === yest);
     } else if (period !== "all") {
       const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
       const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
