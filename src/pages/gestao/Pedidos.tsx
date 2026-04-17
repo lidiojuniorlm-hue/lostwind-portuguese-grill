@@ -397,12 +397,39 @@ export default function Pedidos() {
         ))}
       </div>
 
+      {viewMode === "historico" && historyStores.length > 0 && (
+        <div className="border-b border-border">
+          <div className="flex flex-wrap gap-1 -mb-px">
+            <button
+              onClick={() => setSelectedHistoryStore("todas")}
+              className={`text-xs px-4 py-2 border-b-2 transition-all font-medium ${selectedHistoryStore === "todas" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            >
+              Todas <span className="opacity-60">({historicOrders.length})</span>
+            </button>
+            {historyStores.map((store) => {
+              const count = historicOrders.filter((o: any) => o.store_name === store).length;
+              return (
+                <button
+                  key={store}
+                  onClick={() => setSelectedHistoryStore(store)}
+                  className={`text-xs px-4 py-2 border-b-2 transition-all font-medium ${selectedHistoryStore === store ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                >
+                  {store} <span className="opacity-60">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {sortedOrders.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-12">{viewMode === "hoje" ? "Nenhum pedido hoje" : "Nenhum pedido no histórico"}</p>
       ) : (
         <div className="space-y-3">
           {viewMode === "historico" && (
-            <p className="text-xs text-muted-foreground">Pedidos anteriores a hoje</p>
+            <p className="text-xs text-muted-foreground">
+              {selectedHistoryStore === "todas" ? "Pedidos anteriores a hoje (todas as lojas)" : `Histórico — ${selectedHistoryStore}`}
+            </p>
           )}
           {sortedOrders.map((order: any) => {
             const expanded = expandedOrder === order.id;
