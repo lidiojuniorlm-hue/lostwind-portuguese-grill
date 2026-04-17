@@ -31,10 +31,11 @@ export default function Relatorios() {
   const { data: products = [] } = useProducts();
   const [period, setPeriod] = useState<"hoje" | "ontem" | "7d" | "30d" | "90d" | "all">("30d");
 
-  // Items measured by weight/volume count as 1 unit per line (the qty is the weight, not the count)
+  // Para KPIs: contamos UNIDADES PEDIDAS pela loja (qty original, não actual_qty/peso real).
+  // Itens vendidos por peso/volume (kg, g, l, ml...) contam como 1 unidade por linha.
   const WEIGHT_UNITS = new Set(["kg", "g", "l", "ml", "lt", "gr"]);
   const isWeightUnit = (unit: string) => WEIGHT_UNITS.has((unit || "").toLowerCase().trim());
-  const itemUnitCount = (item: any) => (isWeightUnit(item.unit) ? 1 : Number(item.actual_qty ?? item.qty));
+  const itemUnitCount = (item: any) => (isWeightUnit(item.unit) ? 1 : Number(item.qty) || 0);
   const [selectedStore, setSelectedStore] = useState<string>("todas");
 
   const stores = useMemo(() => Array.from(new Set(orders.map((o: any) => o.store_name))).sort(), [orders]);
@@ -467,25 +468,31 @@ export default function Relatorios() {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      {/* KPIs — versão simplificada e moderna */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { icon: ShoppingCart, label: "Pedidos", value: totalOrders.toString(), accent: "hsl(220, 14%, 46%)" },
-          { icon: Package, label: "Itens", value: totalItems.toString(), accent: "hsl(200, 18%, 55%)" },
-          { icon: Euro, label: "Total c/ IVA", value: `€${totalValue.toFixed(2)}`, accent: "hsl(160, 20%, 50%)" },
-          { icon: BarChart3, label: "Média/Pedido", value: `€${avgOrderValue.toFixed(2)}`, accent: "hsl(35, 25%, 55%)" },
-          { icon: TrendingUp, label: "Taxa Entrega", value: `${fulfillmentRate}%`, accent: "hsl(160, 20%, 50%)" },
-          { icon: ShoppingCart, label: "Cancelamentos", value: `${cancelRate}%`, accent: "hsl(0, 15%, 50%)" },
+          { icon: ShoppingCart, label: "Pedidos", value: totalOrders.toString(), hint: `${deliveredCount} entregues`, accent: "hsl(220, 14%, 46%)" },
+          { icon: Package, label: "Unidades pedidas", value: totalItems.toLocaleString("pt-PT"), hint: "Itens c/ peso = 1 un.", accent: "hsl(200, 18%, 55%)" },
+          { icon: Euro, label: "Faturação total", value: `€${totalValue.toLocaleString("pt-PT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, hint: `Média €${avgOrderValue.toFixed(2)}`, accent: "hsl(160, 20%, 50%)" },
+          { icon: TrendingUp, label: "Taxa de entrega", value: `${fulfillmentRate}%`, hint: `${cancelRate}% cancelados`, accent: "hsl(35, 25%, 55%)" },
         ].map((kpi, idx) => (
-          <Card key={idx} className="bg-card border-border hover:border-border/80 transition-colors">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${kpi.accent}20` }}>
-                  <kpi.icon className="w-4 h-4" style={{ color: kpi.accent }} />
+          <Card key={idx} className="relative overflow-hidden bg-card border-border hover:border-primary/30 transition-all group">
+            <div
+              className="absolute inset-x-0 top-0 h-0.5 opacity-80"
+              style={{ background: `linear-gradient(90deg, ${kpi.accent}, transparent)` }}
+            />
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105"
+                  style={{ background: `${kpi.accent}1a`, border: `1px solid ${kpi.accent}33` }}
+                >
+                  <kpi.icon className="w-5 h-5" style={{ color: kpi.accent }} />
                 </div>
               </div>
-              <p className="text-xl font-heading text-foreground tracking-wide">{kpi.value}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{kpi.label}</p>
+              <p className="text-3xl font-heading text-foreground tracking-wide leading-none">{kpi.value}</p>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mt-2 font-medium">{kpi.label}</p>
+              <p className="text-[10px] text-muted-foreground/70 mt-1">{kpi.hint}</p>
             </CardContent>
           </Card>
         ))}
