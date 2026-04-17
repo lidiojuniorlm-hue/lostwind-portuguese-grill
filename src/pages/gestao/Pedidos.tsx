@@ -19,6 +19,13 @@ const getEffective = (item: any) => {
   return { qty, price, vatRate, subtotal, vat, total: subtotal + vat };
 };
 
+// Units for products sold by weight/volume — these count as 1 unit each, not by weight value
+const WEIGHT_UNITS = new Set(["kg", "g", "l", "ml", "lt", "lts", "litro", "litros", "grama", "gramas", "quilo", "quilos"]);
+const isWeightUnit = (unit?: string) => !!unit && WEIGHT_UNITS.has(unit.trim().toLowerCase());
+// Count units in an order: items by weight = 1 unit per line, items by piece = sum of qty
+const countOrderUnits = (items: any[]) =>
+  (items || []).reduce((sum, i) => sum + (isWeightUnit(i.unit) ? 1 : Number(i.qty) || 0), 0);
+
 interface EditItem {
   id: string;
   product_id: string;
