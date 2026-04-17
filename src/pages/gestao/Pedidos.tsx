@@ -222,6 +222,8 @@ export default function Pedidos() {
     let text = `📋 *PEDIDO — ${(order as any).store_name}*\n`;
     text += `👤 ${createdByUser?.name || "Funcionário"}\n`;
     text += `📅 ${date} às ${time}\n`;
+    const totalUnits = countOrderUnits(items);
+    text += `🔢 Quantidade de itens: ${totalUnits}\n`;
     text += `━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     const grouped: Record<string, any[]> = {};
@@ -239,7 +241,7 @@ export default function Pedidos() {
     });
 
     text += `━━━━━━━━━━━━━━━━━━━━\n`;
-    text += `🛒 Total: ${items.length} produtos\n`;
+    text += `🛒 Total: ${totalUnits} ${totalUnits === 1 ? "item" : "itens"} (${items.length} ${items.length === 1 ? "produto" : "produtos"})\n`;
     if ((order as any).notes) {
       text += `\n📝 *Obs:* ${(order as any).notes}\n`;
     }
