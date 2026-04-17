@@ -93,9 +93,10 @@ export default function Pedidos() {
 
   const statusFlow: OrderStatus[] = ["pendente", "em_preparacao", "pronto", "entregue"];
 
-  const canEditActuals = (status: OrderStatus) =>
-    (user.role === "armazem" || user.role === "admin") &&
-    (status === "em_preparacao" || status === "pronto");
+  const canEditActuals = (status: OrderStatus) => {
+    if (user.role === "admin") return true; // admin can always edit
+    return user.role === "armazem" && (status === "em_preparacao" || status === "pronto");
+  };
 
   const startEditing = (orderId: string, items: any[]) => {
     setEditingItems((prev) => ({
@@ -278,7 +279,7 @@ export default function Pedidos() {
 
         const realQtyContent = showReadyValues
           ? `<span style="font-weight:600;color:#2f2f2f;">${actualQtyValue}</span><span style="display:inline-block;width:6px;"></span><span style="font-size:10px;color:#2a2a2a;">${actualUnitLabel}</span>`
-          : `<span style="display:inline-block;width:92px;border-bottom:1px solid #7a7a7a;height:14px;"></span>`;
+          : `<span style="display:inline-block;width:92px;height:14px;"></span>`;
 
         const priceCol = showReadyValues
           ? `<td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:right;font-size:11px;color:#2a2a2a;">€${unitPriceSemIva.toFixed(2)}</td>
@@ -289,8 +290,8 @@ export default function Pedidos() {
           <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;width:40px;">
             <div style="width:16px;height:16px;border:2px solid #666;border-radius:3px;display:inline-block;"></div>
           </td>
+          <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;font-size:13px;color:#2a2a2a;font-weight:700;width:50px;">${qtyValue}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;font-weight:500;">${item.product_name}</td>
-          <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:13px;color:#2a2a2a;font-weight:700;">${qtyValue}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${realQtyContent}</td>
           ${priceCol}
         </tr>`;
@@ -306,9 +307,9 @@ export default function Pedidos() {
         <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
           <thead><tr style="background:#f5f5f5;">
             <th style="padding:5px 6px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:40px;">✓</th>
+            <th style="padding:5px 6px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:50px;">Qtd</th>
             <th style="padding:5px 8px;font-size:9px;text-align:left;border:1px solid #d7d7d7;">Produto</th>
-            <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:70px;">Qtd</th>
-            <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:130px;">Qtd Real / Peso</th>
+            <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:130px;">Peso / Qtd Real</th>
             ${priceHeaders}
           </tr></thead>
           <tbody>${rows}</tbody>
