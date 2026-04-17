@@ -468,7 +468,7 @@ export default function Pedidos() {
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
                         {new Date(order.created_at).toLocaleDateString("pt-PT", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                        {" · "}{(order.items || []).length} itens
+                        {" · "}{countOrderUnits(order.items || [])} {countOrderUnits(order.items || []) === 1 ? "item" : "itens"}
                         {hasActuals && ` · €${orderTotals.total.toFixed(2)}`}
                       </p>
                     </div>
