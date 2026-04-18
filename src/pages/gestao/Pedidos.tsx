@@ -153,6 +153,76 @@ export default function Pedidos() {
     toast.success("Valores atualizados com sucesso!");
   };
 
+  // Admin: add new items to an existing order
+  const openAddItem = (orderId: string) => {
+    setAddItemOrderId(orderId);
+    setAddItemSearch("");
+    setAddItemSelections({});
+  };
+
+  const closeAddItem = () => {
+    setAddItemOrderId(null);
+    setAddItemSelections({});
+    setAddItemSearch("");
+  };
+
+  const confirmAddItems = async () => {
+    if (!addItemOrderId) return;
+    const order = orders.find((o: any) => o.id === addItemOrderId);
+    if (!order) return;
+    const itemsToAdd = Object.entries(addItemSelections)
+      .filter(([, qty]) => qty > 0)
+      .map(([productId, qty]) => {
+        const p = products.find((pr: any) => pr.id === productId);
+        if (!p) return null;
+        return {
+          product_id: p.id,
+          product_name: p.name,
+          section: p.section,
+          unit: p.unit,
+          qty,
+          unit_price: Number(p.unit_price) || 0,
+          vat_rate: Number(p.vat_rate) || 23,
+        };
+      })
+      .filter(Boolean) as any[];
+
+    if (itemsToAdd.length === 0) {
+      toast.error("Selecione pelo menos um produto com quantidade.");
+      return;
+    }
+
+    try {
+      await addOrderItems.mutateAsync({ orderId: addItemOrderId, items: itemsToAdd });
+      logActivity.mutate({
+        user_id: user.id,
+        user_name: user.name,
+        action: "Itens adicionados a pedido",
+        details: `Pedido ${addItemOrderId.slice(0, 8)} — ${(order as any).store_name} (+${itemsToAdd.length} produto${itemsToAdd.length > 1 ? "s" : ""})`,
+      });
+      toast.success(`${itemsToAdd.length} item(ns) adicionado(s) ao pedido.`);
+      closeAddItem();
+    } catch (e: any) {
+      toast.error("Erro ao adicionar itens: " + (e?.message || ""));
+    }
+  };
+
+  const handleRemoveItem = async (orderId: string, itemId: string, productName: string) => {
+    if (!confirm(`Remover "${productName}" do pedido?`)) return;
+    try {
+      await deleteOrderItem.mutateAsync(itemId);
+      logActivity.mutate({
+        user_id: user.id,
+        user_name: user.name,
+        action: "Item removido de pedido",
+        details: `${productName} — Pedido ${orderId.slice(0, 8)}`,
+      });
+      toast.success("Item removido.");
+    } catch (e: any) {
+      toast.error("Erro ao remover: " + (e?.message || ""));
+    }
+  };
+
   // Print: Guia de Transporte
   const handlePrintGuia = (orderId: string) => {
     const order = orders.find((o: any) => o.id === orderId);
