@@ -561,11 +561,18 @@ export default function Pedidos() {
                     <div className="mt-4 space-y-4">
                       {order.notes && <p className="text-xs text-muted-foreground bg-secondary/50 rounded-lg p-2 whitespace-pre-line">📝 {order.notes}</p>}
 
-                      {canEditActuals(order.status) && !isEditing && (
-                        <Button size="sm" variant="outline" onClick={() => startEditing(order.id, order.items || [])} className="text-xs">
-                          ✏️ Preencher Valores Reais
-                        </Button>
-                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {canEditActuals(order.status) && !isEditing && (
+                          <Button size="sm" variant="outline" onClick={() => startEditing(order.id, order.items || [])} className="text-xs">
+                            ✏️ Preencher Valores Reais
+                          </Button>
+                        )}
+                        {user.role === "admin" && (
+                          <Button size="sm" variant="outline" onClick={() => openAddItem(order.id)} className="text-xs border-primary/40 text-primary hover:bg-primary/10">
+                            <Plus className="w-3 h-3 mr-1" /> Adicionar Item
+                          </Button>
+                        )}
+                      </div>
 
                       {SECTIONS.filter((s) => displayItems.some((i: any) => i.section === s)).map((section) => (
                         <div key={section}>
