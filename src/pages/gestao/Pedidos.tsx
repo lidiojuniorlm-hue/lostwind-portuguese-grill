@@ -673,6 +673,67 @@ export default function Pedidos() {
           })}
         </div>
       )}
+
+      {/* Admin: Add items to existing order */}
+      <Dialog open={!!addItemOrderId} onOpenChange={(o) => { if (!o) closeAddItem(); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Adicionar itens ao pedido</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
+            <Input
+              placeholder="Pesquisar produto..."
+              value={addItemSearch}
+              onChange={(e) => setAddItemSearch(e.target.value)}
+              className="h-9"
+            />
+            <div className="flex-1 overflow-y-auto border border-border rounded-lg divide-y divide-border">
+              {(() => {
+                const order = orders.find((o: any) => o.id === addItemOrderId);
+                const existingIds = new Set(((order as any)?.items || []).map((i: any) => i.product_id));
+                const term = addItemSearch.trim().toLowerCase();
+                const filtered = products
+                  .filter((p: any) => !existingIds.has(p.id))
+                  .filter((p: any) => !term || p.name.toLowerCase().includes(term) || p.section.toLowerCase().includes(term));
+                if (filtered.length === 0) {
+                  return <p className="text-xs text-muted-foreground text-center p-6">Nenhum produto disponível.</p>;
+                }
+                return filtered.map((p: any) => {
+                  const qty = addItemSelections[p.id] ?? 0;
+                  return (
+                    <div key={p.id} className="flex items-center gap-3 p-2 hover:bg-muted/40">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground truncate">{p.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{p.section} · {p.unit} · €{Number(p.unit_price).toFixed(2)}</p>
+                      </div>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="Qtd"
+                        value={qty || ""}
+                        onChange={(e) =>
+                          setAddItemSelections((prev) => ({ ...prev, [p.id]: parseFloat(e.target.value) || 0 }))
+                        }
+                        className="w-24 h-8 text-xs"
+                      />
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {Object.values(addItemSelections).filter((q) => q > 0).length} produto(s) selecionado(s)
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeAddItem}>Cancelar</Button>
+            <Button onClick={confirmAddItems} disabled={addOrderItems.isPending}>
+              {addOrderItems.isPending ? "A adicionar..." : "Adicionar ao pedido"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
