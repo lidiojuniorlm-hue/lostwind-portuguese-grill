@@ -587,6 +587,16 @@ export default function Pedidos() {
                                       <span className="text-primary text-xs ml-2">Real: {Number(item.actual_qty)} {item.unit}</span>
                                     )}
                                   </span>
+                                  {user.role === "admin" && !isEditing && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveItem(order.id, item.id, item.product_name)}
+                                      className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                                      title="Remover item"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
                                 </div>
                                 {isEditing && (
                                   <div className="flex items-center gap-2 ml-6 mt-1">
