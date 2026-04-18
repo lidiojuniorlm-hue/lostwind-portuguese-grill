@@ -176,7 +176,32 @@ export function useOrderMutations() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });
 
-  return { createOrder, updateOrderStatus, updateOrderItems };
+  const addOrderItems = useMutation({
+    mutationFn: async ({
+      orderId,
+      items,
+    }: {
+      orderId: string;
+      items: Omit<TablesInsert<"order_items">, "order_id">[];
+    }) => {
+      const orderItems = items.map((item) => ({ ...item, order_id: orderId }));
+      const { error } = await supabase.from("order_items").insert(orderItems);
+      if (error) throw error;
+      // touch order updated_at
+      await supabase.from("orders").update({ updated_at: new Date().toISOString() }).eq("id", orderId);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
+  });
+
+  const deleteOrderItem = useMutation({
+    mutationFn: async (itemId: string) => {
+      const { error } = await supabase.from("order_items").delete().eq("id", itemId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
+  });
+
+  return { createOrder, updateOrderStatus, updateOrderItems, addOrderItems, deleteOrderItem };
 }
 
 // ─── Suppliers ───

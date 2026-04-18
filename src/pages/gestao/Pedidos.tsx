@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOrders, useOrderMutations, useUsers, useLogActivity, useDeleteOrder } from "@/hooks/useSupabaseData";
+import { useOrders, useOrderMutations, useUsers, useLogActivity, useDeleteOrder, useProducts } from "@/hooks/useSupabaseData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, OrderStatus, SECTIONS } from "@/types/warehouse";
-import { ChevronDown, ChevronUp, Printer, FileText, Save, History, CalendarDays, Trash2, Share2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Printer, FileText, Save, History, CalendarDays, Trash2, Share2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { getLogoBase64 } from "@/utils/logoBase64";
 
@@ -44,7 +45,8 @@ export default function Pedidos() {
   const { user } = useAuth();
   const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
   const { data: users = [] } = useUsers();
-  const { updateOrderStatus, updateOrderItems } = useOrderMutations();
+  const { data: products = [] } = useProducts();
+  const { updateOrderStatus, updateOrderItems, addOrderItems, deleteOrderItem } = useOrderMutations();
   const deleteOrder = useDeleteOrder();
   const logActivity = useLogActivity();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
@@ -52,6 +54,9 @@ export default function Pedidos() {
   const [editingItems, setEditingItems] = useState<Record<string, EditItem[]>>({});
   const [viewMode, setViewMode] = useState<"hoje" | "historico">("hoje");
   const [selectedHistoryStore, setSelectedHistoryStore] = useState<string>("todas");
+  const [addItemOrderId, setAddItemOrderId] = useState<string | null>(null);
+  const [addItemSearch, setAddItemSearch] = useState("");
+  const [addItemSelections, setAddItemSelections] = useState<Record<string, number>>({});
 
   if (!user) return null;
 
@@ -146,6 +151,76 @@ export default function Pedidos() {
     });
     setEditingItems((prev) => { const n = { ...prev }; delete n[orderId]; return n; });
     toast.success("Valores atualizados com sucesso!");
+  };
+
+  // Admin: add new items to an existing order
+  const openAddItem = (orderId: string) => {
+    setAddItemOrderId(orderId);
+    setAddItemSearch("");
+    setAddItemSelections({});
+  };
+
+  const closeAddItem = () => {
+    setAddItemOrderId(null);
+    setAddItemSelections({});
+    setAddItemSearch("");
+  };
+
+  const confirmAddItems = async () => {
+    if (!addItemOrderId) return;
+    const order = orders.find((o: any) => o.id === addItemOrderId);
+    if (!order) return;
+    const itemsToAdd = Object.entries(addItemSelections)
+      .filter(([, qty]) => qty > 0)
+      .map(([productId, qty]) => {
+        const p = products.find((pr: any) => pr.id === productId);
+        if (!p) return null;
+        return {
+          product_id: p.id,
+          product_name: p.name,
+          section: p.section,
+          unit: p.unit,
+          qty,
+          unit_price: Number(p.unit_price) || 0,
+          vat_rate: Number(p.vat_rate) || 23,
+        };
+      })
+      .filter(Boolean) as any[];
+
+    if (itemsToAdd.length === 0) {
+      toast.error("Selecione pelo menos um produto com quantidade.");
+      return;
+    }
+
+    try {
+      await addOrderItems.mutateAsync({ orderId: addItemOrderId, items: itemsToAdd });
+      logActivity.mutate({
+        user_id: user.id,
+        user_name: user.name,
+        action: "Itens adicionados a pedido",
+        details: `Pedido ${addItemOrderId.slice(0, 8)} — ${(order as any).store_name} (+${itemsToAdd.length} produto${itemsToAdd.length > 1 ? "s" : ""})`,
+      });
+      toast.success(`${itemsToAdd.length} item(ns) adicionado(s) ao pedido.`);
+      closeAddItem();
+    } catch (e: any) {
+      toast.error("Erro ao adicionar itens: " + (e?.message || ""));
+    }
+  };
+
+  const handleRemoveItem = async (orderId: string, itemId: string, productName: string) => {
+    if (!confirm(`Remover "${productName}" do pedido?`)) return;
+    try {
+      await deleteOrderItem.mutateAsync(itemId);
+      logActivity.mutate({
+        user_id: user.id,
+        user_name: user.name,
+        action: "Item removido de pedido",
+        details: `${productName} — Pedido ${orderId.slice(0, 8)}`,
+      });
+      toast.success("Item removido.");
+    } catch (e: any) {
+      toast.error("Erro ao remover: " + (e?.message || ""));
+    }
   };
 
   // Print: Guia de Transporte
@@ -486,11 +561,18 @@ export default function Pedidos() {
                     <div className="mt-4 space-y-4">
                       {order.notes && <p className="text-xs text-muted-foreground bg-secondary/50 rounded-lg p-2 whitespace-pre-line">📝 {order.notes}</p>}
 
-                      {canEditActuals(order.status) && !isEditing && (
-                        <Button size="sm" variant="outline" onClick={() => startEditing(order.id, order.items || [])} className="text-xs">
-                          ✏️ Preencher Valores Reais
-                        </Button>
-                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {canEditActuals(order.status) && !isEditing && (
+                          <Button size="sm" variant="outline" onClick={() => startEditing(order.id, order.items || [])} className="text-xs">
+                            ✏️ Preencher Valores Reais
+                          </Button>
+                        )}
+                        {user.role === "admin" && (
+                          <Button size="sm" variant="outline" onClick={() => openAddItem(order.id)} className="text-xs border-primary/40 text-primary hover:bg-primary/10">
+                            <Plus className="w-3 h-3 mr-1" /> Adicionar Item
+                          </Button>
+                        )}
+                      </div>
 
                       {SECTIONS.filter((s) => displayItems.some((i: any) => i.section === s)).map((section) => (
                         <div key={section}>
@@ -505,6 +587,16 @@ export default function Pedidos() {
                                       <span className="text-primary text-xs ml-2">Real: {Number(item.actual_qty)} {item.unit}</span>
                                     )}
                                   </span>
+                                  {user.role === "admin" && !isEditing && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveItem(order.id, item.id, item.product_name)}
+                                      className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                                      title="Remover item"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
                                 </div>
                                 {isEditing && (
                                   <div className="flex items-center gap-2 ml-6 mt-1">
@@ -581,6 +673,67 @@ export default function Pedidos() {
           })}
         </div>
       )}
+
+      {/* Admin: Add items to existing order */}
+      <Dialog open={!!addItemOrderId} onOpenChange={(o) => { if (!o) closeAddItem(); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Adicionar itens ao pedido</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
+            <Input
+              placeholder="Pesquisar produto..."
+              value={addItemSearch}
+              onChange={(e) => setAddItemSearch(e.target.value)}
+              className="h-9"
+            />
+            <div className="flex-1 overflow-y-auto border border-border rounded-lg divide-y divide-border">
+              {(() => {
+                const order = orders.find((o: any) => o.id === addItemOrderId);
+                const existingIds = new Set(((order as any)?.items || []).map((i: any) => i.product_id));
+                const term = addItemSearch.trim().toLowerCase();
+                const filtered = products
+                  .filter((p: any) => !existingIds.has(p.id))
+                  .filter((p: any) => !term || p.name.toLowerCase().includes(term) || p.section.toLowerCase().includes(term));
+                if (filtered.length === 0) {
+                  return <p className="text-xs text-muted-foreground text-center p-6">Nenhum produto disponível.</p>;
+                }
+                return filtered.map((p: any) => {
+                  const qty = addItemSelections[p.id] ?? 0;
+                  return (
+                    <div key={p.id} className="flex items-center gap-3 p-2 hover:bg-muted/40">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground truncate">{p.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{p.section} · {p.unit} · €{Number(p.unit_price).toFixed(2)}</p>
+                      </div>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="Qtd"
+                        value={qty || ""}
+                        onChange={(e) =>
+                          setAddItemSelections((prev) => ({ ...prev, [p.id]: parseFloat(e.target.value) || 0 }))
+                        }
+                        className="w-24 h-8 text-xs"
+                      />
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {Object.values(addItemSelections).filter((q) => q > 0).length} produto(s) selecionado(s)
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeAddItem}>Cancelar</Button>
+            <Button onClick={confirmAddItems} disabled={addOrderItems.isPending}>
+              {addOrderItems.isPending ? "A adicionar..." : "Adicionar ao pedido"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
