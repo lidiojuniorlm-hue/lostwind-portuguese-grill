@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOrders, useOrderMutations, useUsers, useLogActivity, useDeleteOrder } from "@/hooks/useSupabaseData";
+import { useOrders, useOrderMutations, useUsers, useLogActivity, useDeleteOrder, useProducts } from "@/hooks/useSupabaseData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, OrderStatus, SECTIONS } from "@/types/warehouse";
-import { ChevronDown, ChevronUp, Printer, FileText, Save, History, CalendarDays, Trash2, Share2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Printer, FileText, Save, History, CalendarDays, Trash2, Share2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { getLogoBase64 } from "@/utils/logoBase64";
 
