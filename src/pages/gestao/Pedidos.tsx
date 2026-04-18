@@ -45,7 +45,8 @@ export default function Pedidos() {
   const { user } = useAuth();
   const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
   const { data: users = [] } = useUsers();
-  const { updateOrderStatus, updateOrderItems } = useOrderMutations();
+  const { data: products = [] } = useProducts();
+  const { updateOrderStatus, updateOrderItems, addOrderItems, deleteOrderItem } = useOrderMutations();
   const deleteOrder = useDeleteOrder();
   const logActivity = useLogActivity();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
@@ -53,6 +54,9 @@ export default function Pedidos() {
   const [editingItems, setEditingItems] = useState<Record<string, EditItem[]>>({});
   const [viewMode, setViewMode] = useState<"hoje" | "historico">("hoje");
   const [selectedHistoryStore, setSelectedHistoryStore] = useState<string>("todas");
+  const [addItemOrderId, setAddItemOrderId] = useState<string | null>(null);
+  const [addItemSearch, setAddItemSearch] = useState("");
+  const [addItemSelections, setAddItemSelections] = useState<Record<string, number>>({});
 
   if (!user) return null;
 
