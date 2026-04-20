@@ -633,7 +633,7 @@ export default function Pedidos() {
 
                       {(user.role === "admin" || user.role === "armazem") && !isEditing && (
                         <p className="text-[11px] text-muted-foreground bg-secondary/40 rounded-md px-2 py-1.5">
-                          ⬆️ Marca os itens que entram <strong className="text-foreground">primeiro na carrinha</strong> — eles vão para o topo da lista (e da impressão) na ordem em que forem marcados.
+                          ⬆️ Marca os itens que entram <strong className="text-foreground">primeiro na carrinha</strong> — eles aparecem numa secção própria no topo (e da impressão), na ordem em que forem marcados.
                           {(priorityItems[order.id] || []).length > 0 && (
                             <button
                               type="button"
