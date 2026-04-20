@@ -414,21 +414,23 @@ export default function Relatorios() {
       }) + 10;
     }
 
-    // === FOOTER ===
+    // === FOOTER (minimal, neutral) ===
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      // Bottom bar
+      // Hairline + small accent
+      doc.setDrawColor(...gray200);
+      doc.setLineWidth(0.3);
+      doc.line(14, ph - 14, pw - 14, ph - 14);
       doc.setFillColor(...brandDark);
-      doc.rect(0, ph - 16, pw, 16, "F");
-      doc.setFillColor(...brandAccent);
-      doc.rect(0, ph - 16, pw, 0.8, "F");
+      doc.rect(14, ph - 14.4, 14, 0.6, "F");
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7);
-      doc.setTextColor(...white);
+      doc.setTextColor(...gray400);
       doc.text("Lost Wind Churrasqueira — Documento gerado automaticamente", 14, ph - 7);
-      doc.text(`Página ${i} de ${pageCount}`, pw - 14, ph - 7, { align: "right" });
+      doc.setTextColor(...gray600);
+      doc.text(`Página ${i} / ${pageCount}`, pw - 14, ph - 7, { align: "right" });
     }
 
     downloadPDF(doc, `relatorio-kpi-${new Date().toISOString().slice(0, 10)}.pdf`);
