@@ -58,6 +58,31 @@ export default function Pedidos() {
   const [addItemOrderId, setAddItemOrderId] = useState<string | null>(null);
   const [addItemSearch, setAddItemSearch] = useState("");
   const [addItemSelections, setAddItemSelections] = useState<Record<string, number>>({});
+  // Per-order ordered list of item IDs marked as priority (first loaded into the van).
+  // We keep them in selection order so the user controls the loading sequence.
+  const [priorityItems, setPriorityItems] = useState<Record<string, string[]>>({});
+
+  const togglePriority = (orderId: string, itemId: string) => {
+    setPriorityItems((prev) => {
+      const current = prev[orderId] || [];
+      const next = current.includes(itemId)
+        ? current.filter((id) => id !== itemId)
+        : [...current, itemId];
+      return { ...prev, [orderId]: next };
+    });
+  };
+
+  // Reorder items: priority items first (in selection order), then the rest in original order.
+  const applyPriorityOrder = (items: any[], orderId: string) => {
+    const priority = priorityItems[orderId] || [];
+    if (priority.length === 0) return items;
+    const prioritySet = new Set(priority);
+    const prioritized = priority
+      .map((id) => items.find((i) => i.id === id))
+      .filter(Boolean);
+    const rest = items.filter((i) => !prioritySet.has(i.id));
+    return [...prioritized, ...rest];
+  };
 
   if (!user) return null;
 
