@@ -236,12 +236,12 @@ export default function Relatorios() {
 
     // === KPI CARDS (3x2 grid) ===
     const kpiData = [
-      { label: "Total Pedidos", value: totalOrders.toString(), color: brandDark },
-      { label: "Itens Movimentados", value: totalItems.toString(), color: brandLight },
-      { label: "Faturação Total", value: `€${totalValue.toFixed(2)}`, color: brandAccent },
-      { label: "Média por Pedido", value: `€${avgOrderValue.toFixed(2)}`, color: brandDark },
-      { label: "Taxa de Entrega", value: `${fulfillmentRate}%`, color: [39, 174, 96] as [number, number, number] },
-      { label: "Taxa Cancelamento", value: `${cancelRate}%`, color: brandAccent },
+      { label: "Total Pedidos", value: totalOrders.toString() },
+      { label: "Itens Movimentados", value: totalItems.toString() },
+      { label: "Faturação Total", value: `€${totalValue.toFixed(2)}` },
+      { label: "Média por Pedido", value: `€${avgOrderValue.toFixed(2)}` },
+      { label: "Taxa de Entrega", value: `${fulfillmentRate}%` },
+      { label: "Taxa Cancelamento", value: `${cancelRate}%` },
     ];
 
     const cardW = (pw - 28 - 12) / 3;
@@ -253,25 +253,29 @@ export default function Relatorios() {
       const cx = 14 + col * (cardW + 6);
       const cy = y + row * (cardH + 5);
 
-      // Card bg
-      doc.setFillColor(...gray50);
-      doc.roundedRect(cx, cy, cardW, cardH, 2, 2, "F");
+      // Card bg + thin border (tech card look)
+      doc.setFillColor(...white);
+      doc.setDrawColor(...gray200);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(cx, cy, cardW, cardH, 1.5, 1.5, "FD");
 
-      // Left accent bar
-      doc.setFillColor(...(kpi.color as [number, number, number]));
-      doc.rect(cx, cy + 3, 1.2, cardH - 6, "F");
+      // Tiny corner mark (tech accent)
+      doc.setDrawColor(...brandDark);
+      doc.setLineWidth(0.4);
+      doc.line(cx + 2, cy + 2, cx + 5, cy + 2);
+      doc.line(cx + 2, cy + 2, cx + 2, cy + 5);
 
       // Label
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(7);
-      doc.setTextColor(...gray600);
-      doc.text(kpi.label, cx + 5, cy + 8);
+      doc.setFontSize(6.5);
+      doc.setTextColor(...gray400);
+      doc.text(kpi.label.toUpperCase(), cx + 6, cy + 8);
 
       // Value
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
+      doc.setFontSize(13);
       doc.setTextColor(...gray900);
-      doc.text(kpi.value, cx + 5, cy + 17);
+      doc.text(kpi.value, cx + 6, cy + 17);
     });
 
     y += 2 * (cardH + 5) + 8;
