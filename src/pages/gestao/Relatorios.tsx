@@ -184,51 +184,64 @@ export default function Relatorios() {
     const periodLabel = period === "hoje" ? "Hoje" : period === "ontem" ? "Ontem" : period === "7d" ? "7 dias" : period === "30d" ? "30 dias" : period === "90d" ? "90 dias" : "Tudo";
     const logoB64 = await loadLogoBase64();
 
-    const brandDark = [30, 58, 82] as [number, number, number];   // dark teal
-    const brandAccent = [195, 57, 43] as [number, number, number]; // red
-    const brandLight = [41, 128, 185] as [number, number, number]; // blue
-    const gray50 = [249, 250, 251] as [number, number, number];
+    // Neutral, modern, tech-style palette (graphite scale + subtle accent)
+    const brandDark = [38, 42, 48] as [number, number, number];      // graphite (headers/bars)
+    const brandAccent = [110, 118, 129] as [number, number, number]; // medium gray accent
+    const brandLight = [82, 88, 96] as [number, number, number];     // soft graphite
+    const gray50 = [250, 250, 251] as [number, number, number];
+    const gray100 = [243, 244, 246] as [number, number, number];
     const gray200 = [229, 231, 235] as [number, number, number];
+    const gray400 = [156, 163, 175] as [number, number, number];
     const gray600 = [75, 85, 99] as [number, number, number];
-    const gray900 = [17, 24, 39] as [number, number, number];
+    const gray900 = [24, 28, 34] as [number, number, number];
     const white = [255, 255, 255] as [number, number, number];
 
-    // === HEADER ===
-    doc.setFillColor(...brandDark);
-    doc.rect(0, 0, pw, 38, "F");
+    // === HEADER (minimal, neutral) ===
+    doc.setFillColor(...white);
+    doc.rect(0, 0, pw, 40, "F");
 
-    // Accent line
-    doc.setFillColor(...brandAccent);
-    doc.rect(0, 38, pw, 1.5, "F");
+    // Subtle top tech grid line
+    doc.setDrawColor(...gray200);
+    doc.setLineWidth(0.2);
+    for (let gx = 0; gx < pw; gx += 4) {
+      doc.line(gx, 0, gx, 1.2);
+    }
+
+    // Bottom hairline + thin accent
+    doc.setDrawColor(...gray200);
+    doc.setLineWidth(0.3);
+    doc.line(0, 39, pw, 39);
+    doc.setFillColor(...brandDark);
+    doc.rect(14, 39.2, 40, 0.8, "F");
 
     if (logoB64) {
-      try { doc.addImage(logoB64, "JPEG", 14, 6, 24, 24, undefined, "FAST"); } catch {}
+      try { doc.addImage(logoB64, "JPEG", 14, 8, 22, 22, undefined, "FAST"); } catch {}
     }
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.setTextColor(...white);
-    doc.text("Relatório de KPI — Armazém", 44, 16);
+    doc.setFontSize(15);
+    doc.setTextColor(...gray900);
+    doc.text("Relatório de KPI — Armazém", 42, 17);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(180, 210, 230);
-    doc.text(`Lost Wind Churrasqueira  ·  ${periodLabel}${selectedStore !== "todas" ? ` · ${selectedStore}` : ""}`, 44, 23);
+    doc.setFontSize(8.5);
+    doc.setTextColor(...gray600);
+    doc.text(`Lost Wind Churrasqueira  ·  ${periodLabel}${selectedStore !== "todas" ? ` · ${selectedStore}` : ""}`, 42, 24);
 
-    doc.setFontSize(7.5);
-    doc.setTextColor(140, 180, 210);
-    doc.text(`Gerado em ${new Date().toLocaleDateString("pt-PT")} às ${new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}`, 44, 29);
+    doc.setFontSize(7);
+    doc.setTextColor(...gray400);
+    doc.text(`Gerado em ${new Date().toLocaleDateString("pt-PT")} às ${new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}`, 42, 30);
 
     let y = 48;
 
     // === KPI CARDS (3x2 grid) ===
     const kpiData = [
-      { label: "Total Pedidos", value: totalOrders.toString(), color: brandDark },
-      { label: "Itens Movimentados", value: totalItems.toString(), color: brandLight },
-      { label: "Faturação Total", value: `€${totalValue.toFixed(2)}`, color: brandAccent },
-      { label: "Média por Pedido", value: `€${avgOrderValue.toFixed(2)}`, color: brandDark },
-      { label: "Taxa de Entrega", value: `${fulfillmentRate}%`, color: [39, 174, 96] as [number, number, number] },
-      { label: "Taxa Cancelamento", value: `${cancelRate}%`, color: brandAccent },
+      { label: "Total Pedidos", value: totalOrders.toString() },
+      { label: "Itens Movimentados", value: totalItems.toString() },
+      { label: "Faturação Total", value: `€${totalValue.toFixed(2)}` },
+      { label: "Média por Pedido", value: `€${avgOrderValue.toFixed(2)}` },
+      { label: "Taxa de Entrega", value: `${fulfillmentRate}%` },
+      { label: "Taxa Cancelamento", value: `${cancelRate}%` },
     ];
 
     const cardW = (pw - 28 - 12) / 3;
@@ -240,25 +253,29 @@ export default function Relatorios() {
       const cx = 14 + col * (cardW + 6);
       const cy = y + row * (cardH + 5);
 
-      // Card bg
-      doc.setFillColor(...gray50);
-      doc.roundedRect(cx, cy, cardW, cardH, 2, 2, "F");
+      // Card bg + thin border (tech card look)
+      doc.setFillColor(...white);
+      doc.setDrawColor(...gray200);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(cx, cy, cardW, cardH, 1.5, 1.5, "FD");
 
-      // Left accent bar
-      doc.setFillColor(...(kpi.color as [number, number, number]));
-      doc.rect(cx, cy + 3, 1.2, cardH - 6, "F");
+      // Tiny corner mark (tech accent)
+      doc.setDrawColor(...brandDark);
+      doc.setLineWidth(0.4);
+      doc.line(cx + 2, cy + 2, cx + 5, cy + 2);
+      doc.line(cx + 2, cy + 2, cx + 2, cy + 5);
 
       // Label
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(7);
-      doc.setTextColor(...gray600);
-      doc.text(kpi.label, cx + 5, cy + 8);
+      doc.setFontSize(6.5);
+      doc.setTextColor(...gray400);
+      doc.text(kpi.label.toUpperCase(), cx + 6, cy + 8);
 
       // Value
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
+      doc.setFontSize(13);
       doc.setTextColor(...gray900);
-      doc.text(kpi.value, cx + 5, cy + 17);
+      doc.text(kpi.value, cx + 6, cy + 17);
     });
 
     y += 2 * (cardH + 5) + 8;
@@ -352,17 +369,18 @@ export default function Relatorios() {
         doc.setTextColor(...gray900);
         doc.text(name, 14, y + 5);
 
-        // Bar bg
-        doc.setFillColor(...gray200);
+        // Bar bg (track)
+        doc.setFillColor(...gray100);
         doc.roundedRect(60, y + 1, barMaxW, 5, 1, 1, "F");
 
-        // Bar fill
+        // Bar fill — neutral graphite, alternating subtle shade
         doc.setFillColor(...(i % 2 === 0 ? brandDark : brandLight));
         if (barW > 2) doc.roundedRect(60, y + 1, barW, 5, 1, 1, "F");
 
         // Value
         doc.setFont("helvetica", "bold");
         doc.setFontSize(7);
+        doc.setTextColor(...gray900);
         doc.text(`€${total.toFixed(2)}  (${d.count} ped.)`, 60 + barMaxW + 2, y + 5);
 
         y += 10;
@@ -396,21 +414,23 @@ export default function Relatorios() {
       }) + 10;
     }
 
-    // === FOOTER ===
+    // === FOOTER (minimal, neutral) ===
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      // Bottom bar
+      // Hairline + small accent
+      doc.setDrawColor(...gray200);
+      doc.setLineWidth(0.3);
+      doc.line(14, ph - 14, pw - 14, ph - 14);
       doc.setFillColor(...brandDark);
-      doc.rect(0, ph - 16, pw, 16, "F");
-      doc.setFillColor(...brandAccent);
-      doc.rect(0, ph - 16, pw, 0.8, "F");
+      doc.rect(14, ph - 14.4, 14, 0.6, "F");
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7);
-      doc.setTextColor(...white);
+      doc.setTextColor(...gray400);
       doc.text("Lost Wind Churrasqueira — Documento gerado automaticamente", 14, ph - 7);
-      doc.text(`Página ${i} de ${pageCount}`, pw - 14, ph - 7, { align: "right" });
+      doc.setTextColor(...gray600);
+      doc.text(`Página ${i} / ${pageCount}`, pw - 14, ph - 7, { align: "right" });
     }
 
     downloadPDF(doc, `relatorio-kpi-${new Date().toISOString().slice(0, 10)}.pdf`);
