@@ -688,10 +688,12 @@ export default function Pedidos() {
                                   </div>
                                 )}
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
 
                       {isEditing && (
                         <Button size="sm" onClick={() => saveEditing(order.id)} className="bg-primary text-primary-foreground text-xs">
