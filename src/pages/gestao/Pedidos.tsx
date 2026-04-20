@@ -653,7 +653,10 @@ export default function Pedidos() {
                                     />
                                   )}
                                   {isPriority && (
-                                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded bg-background border border-primary text-primary text-[10px] font-bold">
+                                    <span
+                                      className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded text-[11px] font-extrabold"
+                                      style={{ color: "#ef4444", border: "1.5px solid #ef4444", background: "rgba(239,68,68,0.08)" }}
+                                    >
                                       {priorityIndex}º
                                     </span>
                                   )}
