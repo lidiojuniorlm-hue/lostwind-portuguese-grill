@@ -369,17 +369,18 @@ export default function Relatorios() {
         doc.setTextColor(...gray900);
         doc.text(name, 14, y + 5);
 
-        // Bar bg
-        doc.setFillColor(...gray200);
+        // Bar bg (track)
+        doc.setFillColor(...gray100);
         doc.roundedRect(60, y + 1, barMaxW, 5, 1, 1, "F");
 
-        // Bar fill
+        // Bar fill — neutral graphite, alternating subtle shade
         doc.setFillColor(...(i % 2 === 0 ? brandDark : brandLight));
         if (barW > 2) doc.roundedRect(60, y + 1, barW, 5, 1, 1, "F");
 
         // Value
         doc.setFont("helvetica", "bold");
         doc.setFontSize(7);
+        doc.setTextColor(...gray900);
         doc.text(`€${total.toFixed(2)}  (${d.count} ped.)`, 60 + barMaxW + 2, y + 5);
 
         y += 10;
