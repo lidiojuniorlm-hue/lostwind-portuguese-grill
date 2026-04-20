@@ -406,12 +406,17 @@ export default function Pedidos() {
              <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:right;font-size:12px;color:#2a2a2a;font-weight:600;">€${lineTotalSemIva.toFixed(2)}</td>`
           : "";
 
-        return `<tr>
+        const rowBg = isPriority ? "background:#fff8e1;" : "";
+        const priorityBadge = isPriority
+          ? `<span style="display:inline-block;background:#c0392b;color:#fff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:3px;margin-right:4px;vertical-align:middle;">1º</span>`
+          : "";
+
+        return `<tr style="${rowBg}">
           <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;width:40px;">
             <div style="width:16px;height:16px;border:2px solid #666;border-radius:3px;display:inline-block;"></div>
           </td>
           <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;font-size:13px;color:#2a2a2a;font-weight:700;width:50px;">${qtyValue}</td>
-          <td style="padding:6px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;font-weight:500;">${item.product_name}</td>
+          <td style="padding:6px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;font-weight:500;">${priorityBadge}${item.product_name}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${realQtyContent}</td>
           ${priceCol}
         </tr>`;
