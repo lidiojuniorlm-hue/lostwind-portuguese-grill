@@ -5,8 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, OrderStatus, SECTIONS } from "@/types/warehouse";
-import { ChevronDown, ChevronUp, Printer, FileText, Save, History, CalendarDays, Trash2, Share2, Plus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Printer, FileText, Save, History, CalendarDays, Trash2, Share2, Plus, X, ArrowUp } from "lucide-react";
 import { toast } from "sonner";
 import { getLogoBase64 } from "@/utils/logoBase64";
 
@@ -57,6 +58,31 @@ export default function Pedidos() {
   const [addItemOrderId, setAddItemOrderId] = useState<string | null>(null);
   const [addItemSearch, setAddItemSearch] = useState("");
   const [addItemSelections, setAddItemSelections] = useState<Record<string, number>>({});
+  // Per-order ordered list of item IDs marked as priority (first loaded into the van).
+  // We keep them in selection order so the user controls the loading sequence.
+  const [priorityItems, setPriorityItems] = useState<Record<string, string[]>>({});
+
+  const togglePriority = (orderId: string, itemId: string) => {
+    setPriorityItems((prev) => {
+      const current = prev[orderId] || [];
+      const next = current.includes(itemId)
+        ? current.filter((id) => id !== itemId)
+        : [...current, itemId];
+      return { ...prev, [orderId]: next };
+    });
+  };
+
+  // Reorder items: priority items first (in selection order), then the rest in original order.
+  const applyPriorityOrder = (items: any[], orderId: string) => {
+    const priority = priorityItems[orderId] || [];
+    if (priority.length === 0) return items;
+    const prioritySet = new Set(priority);
+    const prioritized = priority
+      .map((id) => items.find((i) => i.id === id))
+      .filter(Boolean);
+    const rest = items.filter((i) => !prioritySet.has(i.id));
+    return [...prioritized, ...rest];
+  };
 
   if (!user) return null;
 
@@ -358,9 +384,12 @@ export default function Pedidos() {
     const logoBase64 = await getLogoBase64();
 
     const sectionsHtml = SECTIONS.filter((s) => items.some((i: any) => i.section === s)).map((section) => {
-      const sectionItems = items.filter((i: any) => i.section === section);
+      const sectionItemsRaw = items.filter((i: any) => i.section === section);
+      const sectionItems = applyPriorityOrder(sectionItemsRaw, orderId);
+      const prioritySet = new Set(priorityItems[orderId] || []);
 
       const rows = sectionItems.map((item: any) => {
+        const isPriority = prioritySet.has(item.id);
         const qtyValue = formatQty(Number(item.qty));
         const actualQtyValue = formatQty(Number(item.actual_qty ?? item.qty));
         const actualUnitLabel = item.unit;
@@ -377,12 +406,17 @@ export default function Pedidos() {
              <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:right;font-size:12px;color:#2a2a2a;font-weight:600;">€${lineTotalSemIva.toFixed(2)}</td>`
           : "";
 
-        return `<tr>
+        const rowBg = isPriority ? "background:#fff8e1;" : "";
+        const priorityBadge = isPriority
+          ? `<span style="display:inline-block;background:#c0392b;color:#fff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:3px;margin-right:4px;vertical-align:middle;">1º</span>`
+          : "";
+
+        return `<tr style="${rowBg}">
           <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;width:40px;">
             <div style="width:16px;height:16px;border:2px solid #666;border-radius:3px;display:inline-block;"></div>
           </td>
           <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;font-size:13px;color:#2a2a2a;font-weight:700;width:50px;">${qtyValue}</td>
-          <td style="padding:6px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;font-weight:500;">${item.product_name}</td>
+          <td style="padding:6px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;font-weight:500;">${priorityBadge}${item.product_name}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${realQtyContent}</td>
           ${priceCol}
         </tr>`;
@@ -419,15 +453,19 @@ export default function Pedidos() {
           <div>${printedAt.toLocaleDateString("pt-PT")} ${printedAt.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</div>
           <div>Pedido ${(order as any).store_name}</div>
         </div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:6px;">
           <img src="${logoBase64}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
           <div style="text-align:center;">
-            <div style="font-size:20px;font-weight:800;color:#000;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;">Lost Wind Churrasqueira</div>
-            <div style="font-size:12px;color:#555;margin-top:2px;">Pedido de Stock — ${(order as any).store_name}</div>
+            <div style="font-size:18px;font-weight:800;color:#000;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;">Lost Wind Churrasqueira</div>
+            <div style="font-size:11px;color:#666;margin-top:2px;text-transform:uppercase;letter-spacing:1px;">Pedido de Stock</div>
           </div>
         </div>
+        <div style="text-align:center;margin:8px 0 12px;padding:10px 14px;background:linear-gradient(90deg,#fef2f2 0%,#fff5f5 50%,#fef2f2 100%);border-top:2px solid #c0392b;border-bottom:2px solid #c0392b;">
+          <div style="font-size:10px;color:#7a1d14;text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:2px;">Loja de Destino</div>
+          <div style="font-size:26px;font-weight:900;color:#c0392b;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;line-height:1.1;">${(order as any).store_name}</div>
+        </div>
         <div style="text-align:center;font-size:11px;color:#666;margin-bottom:10px;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })} às ${new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} · Estado: ${ORDER_STATUS_LABELS[(order as any).status as OrderStatus]}</div>
-        <div style="font-size:10px;color:#555;margin:0 0 8px 4px;">📝 ${showReadyValues ? "Valores reais digitalizados" : "Qtd real / peso para preenchimento manual"}</div>
+        <div style="font-size:10px;color:#555;margin:0 0 8px 4px;">📝 ${showReadyValues ? "Valores reais digitalizados" : "Qtd real / peso para preenchimento manual"}${(priorityItems[orderId] || []).length > 0 ? ` · <span style="color:#c0392b;font-weight:700;">Itens marcados com 1º entram primeiro na carrinha</span>` : ""}</div>
         ${sectionsHtml}
         ${financialSummary ? `
           <div style="margin-top:10px;border-top:2px solid #333;padding-top:8px;">
@@ -574,13 +612,51 @@ export default function Pedidos() {
                         )}
                       </div>
 
-                      {SECTIONS.filter((s) => displayItems.some((i: any) => i.section === s)).map((section) => (
+                      {(user.role === "admin" || user.role === "armazem") && !isEditing && (
+                        <p className="text-[11px] text-muted-foreground bg-secondary/40 rounded-md px-2 py-1.5">
+                          ⬆️ Marca os itens que entram <strong className="text-foreground">primeiro na carrinha</strong> — eles vão para o topo da lista (e da impressão) na ordem em que forem marcados.
+                          {(priorityItems[order.id] || []).length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setPriorityItems((prev) => ({ ...prev, [order.id]: [] }))}
+                              className="ml-2 text-primary hover:underline"
+                            >
+                              Limpar prioridades ({(priorityItems[order.id] || []).length})
+                            </button>
+                          )}
+                        </p>
+                      )}
+
+                      {SECTIONS.filter((s) => displayItems.some((i: any) => i.section === s)).map((section) => {
+                        const sectionItems = applyPriorityOrder(
+                          displayItems.filter((i: any) => i.section === section),
+                          order.id,
+                        );
+                        const prioritySet = new Set(priorityItems[order.id] || []);
+                        const priorityList = priorityItems[order.id] || [];
+                        return (
                         <div key={section}>
                           <p className="text-xs text-primary font-semibold mb-1">{section}</p>
                           <div className="space-y-1">
-                            {displayItems.filter((i: any) => i.section === section).map((item: any) => (
-                              <div key={item.id} className="text-sm">
+                            {sectionItems.map((item: any) => {
+                              const isPriority = prioritySet.has(item.id);
+                              const priorityIndex = isPriority ? priorityList.indexOf(item.id) + 1 : 0;
+                              return (
+                              <div key={item.id} className={`text-sm rounded-md transition-colors ${isPriority ? "bg-primary/5 border-l-2 border-primary pl-2 py-1" : ""}`}>
                                 <div className="flex items-center gap-2">
+                                  {(user.role === "admin" || user.role === "armazem") && !isEditing && (
+                                    <Checkbox
+                                      checked={isPriority}
+                                      onCheckedChange={() => togglePriority(order.id, item.id)}
+                                      className="h-4 w-4"
+                                      aria-label="Marcar como prioritário"
+                                    />
+                                  )}
+                                  {isPriority && (
+                                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded bg-primary text-primary-foreground text-[10px] font-bold">
+                                      {priorityIndex}º
+                                    </span>
+                                  )}
                                   <span className="text-foreground flex-1">
                                     {Number(item.qty)} {item.unit} — {item.product_name}
                                     {!isEditing && item.actual_qty != null && (
@@ -612,10 +688,12 @@ export default function Pedidos() {
                                   </div>
                                 )}
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
 
                       {isEditing && (
                         <Button size="sm" onClick={() => saveEditing(order.id)} className="bg-primary text-primary-foreground text-xs">
