@@ -612,13 +612,51 @@ export default function Pedidos() {
                         )}
                       </div>
 
-                      {SECTIONS.filter((s) => displayItems.some((i: any) => i.section === s)).map((section) => (
+                      {(user.role === "admin" || user.role === "armazem") && !isEditing && (
+                        <p className="text-[11px] text-muted-foreground bg-secondary/40 rounded-md px-2 py-1.5">
+                          ⬆️ Marca os itens que entram <strong className="text-foreground">primeiro na carrinha</strong> — eles vão para o topo da lista (e da impressão) na ordem em que forem marcados.
+                          {(priorityItems[order.id] || []).length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setPriorityItems((prev) => ({ ...prev, [order.id]: [] }))}
+                              className="ml-2 text-primary hover:underline"
+                            >
+                              Limpar prioridades ({(priorityItems[order.id] || []).length})
+                            </button>
+                          )}
+                        </p>
+                      )}
+
+                      {SECTIONS.filter((s) => displayItems.some((i: any) => i.section === s)).map((section) => {
+                        const sectionItems = applyPriorityOrder(
+                          displayItems.filter((i: any) => i.section === section),
+                          order.id,
+                        );
+                        const prioritySet = new Set(priorityItems[order.id] || []);
+                        const priorityList = priorityItems[order.id] || [];
+                        return (
                         <div key={section}>
                           <p className="text-xs text-primary font-semibold mb-1">{section}</p>
                           <div className="space-y-1">
-                            {displayItems.filter((i: any) => i.section === section).map((item: any) => (
-                              <div key={item.id} className="text-sm">
+                            {sectionItems.map((item: any) => {
+                              const isPriority = prioritySet.has(item.id);
+                              const priorityIndex = isPriority ? priorityList.indexOf(item.id) + 1 : 0;
+                              return (
+                              <div key={item.id} className={`text-sm rounded-md transition-colors ${isPriority ? "bg-primary/5 border-l-2 border-primary pl-2 py-1" : ""}`}>
                                 <div className="flex items-center gap-2">
+                                  {(user.role === "admin" || user.role === "armazem") && !isEditing && (
+                                    <Checkbox
+                                      checked={isPriority}
+                                      onCheckedChange={() => togglePriority(order.id, item.id)}
+                                      className="h-4 w-4"
+                                      aria-label="Marcar como prioritário"
+                                    />
+                                  )}
+                                  {isPriority && (
+                                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded bg-primary text-primary-foreground text-[10px] font-bold">
+                                      {priorityIndex}º
+                                    </span>
+                                  )}
                                   <span className="text-foreground flex-1">
                                     {Number(item.qty)} {item.unit} — {item.product_name}
                                     {!isEditing && item.actual_qty != null && (
