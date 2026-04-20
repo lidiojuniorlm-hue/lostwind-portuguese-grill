@@ -184,40 +184,53 @@ export default function Relatorios() {
     const periodLabel = period === "hoje" ? "Hoje" : period === "ontem" ? "Ontem" : period === "7d" ? "7 dias" : period === "30d" ? "30 dias" : period === "90d" ? "90 dias" : "Tudo";
     const logoB64 = await loadLogoBase64();
 
-    const brandDark = [30, 58, 82] as [number, number, number];   // dark teal
-    const brandAccent = [195, 57, 43] as [number, number, number]; // red
-    const brandLight = [41, 128, 185] as [number, number, number]; // blue
-    const gray50 = [249, 250, 251] as [number, number, number];
+    // Neutral, modern, tech-style palette (graphite scale + subtle accent)
+    const brandDark = [38, 42, 48] as [number, number, number];      // graphite (headers/bars)
+    const brandAccent = [110, 118, 129] as [number, number, number]; // medium gray accent
+    const brandLight = [82, 88, 96] as [number, number, number];     // soft graphite
+    const gray50 = [250, 250, 251] as [number, number, number];
+    const gray100 = [243, 244, 246] as [number, number, number];
     const gray200 = [229, 231, 235] as [number, number, number];
+    const gray400 = [156, 163, 175] as [number, number, number];
     const gray600 = [75, 85, 99] as [number, number, number];
-    const gray900 = [17, 24, 39] as [number, number, number];
+    const gray900 = [24, 28, 34] as [number, number, number];
     const white = [255, 255, 255] as [number, number, number];
 
-    // === HEADER ===
-    doc.setFillColor(...brandDark);
-    doc.rect(0, 0, pw, 38, "F");
+    // === HEADER (minimal, neutral) ===
+    doc.setFillColor(...white);
+    doc.rect(0, 0, pw, 40, "F");
 
-    // Accent line
-    doc.setFillColor(...brandAccent);
-    doc.rect(0, 38, pw, 1.5, "F");
+    // Subtle top tech grid line
+    doc.setDrawColor(...gray200);
+    doc.setLineWidth(0.2);
+    for (let gx = 0; gx < pw; gx += 4) {
+      doc.line(gx, 0, gx, 1.2);
+    }
+
+    // Bottom hairline + thin accent
+    doc.setDrawColor(...gray200);
+    doc.setLineWidth(0.3);
+    doc.line(0, 39, pw, 39);
+    doc.setFillColor(...brandDark);
+    doc.rect(14, 39.2, 40, 0.8, "F");
 
     if (logoB64) {
-      try { doc.addImage(logoB64, "JPEG", 14, 6, 24, 24, undefined, "FAST"); } catch {}
+      try { doc.addImage(logoB64, "JPEG", 14, 8, 22, 22, undefined, "FAST"); } catch {}
     }
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.setTextColor(...white);
-    doc.text("Relatório de KPI — Armazém", 44, 16);
+    doc.setFontSize(15);
+    doc.setTextColor(...gray900);
+    doc.text("Relatório de KPI — Armazém", 42, 17);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(180, 210, 230);
-    doc.text(`Lost Wind Churrasqueira  ·  ${periodLabel}${selectedStore !== "todas" ? ` · ${selectedStore}` : ""}`, 44, 23);
+    doc.setFontSize(8.5);
+    doc.setTextColor(...gray600);
+    doc.text(`Lost Wind Churrasqueira  ·  ${periodLabel}${selectedStore !== "todas" ? ` · ${selectedStore}` : ""}`, 42, 24);
 
-    doc.setFontSize(7.5);
-    doc.setTextColor(140, 180, 210);
-    doc.text(`Gerado em ${new Date().toLocaleDateString("pt-PT")} às ${new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}`, 44, 29);
+    doc.setFontSize(7);
+    doc.setTextColor(...gray400);
+    doc.text(`Gerado em ${new Date().toLocaleDateString("pt-PT")} às ${new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}`, 42, 30);
 
     let y = 48;
 
