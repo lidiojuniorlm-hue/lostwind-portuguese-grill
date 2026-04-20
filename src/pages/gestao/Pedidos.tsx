@@ -389,6 +389,7 @@ export default function Pedidos() {
       const prioritySet = new Set(priorityItems[orderId] || []);
 
       const rows = sectionItems.map((item: any) => {
+        const isPriority = prioritySet.has(item.id);
         const qtyValue = formatQty(Number(item.qty));
         const actualQtyValue = formatQty(Number(item.actual_qty ?? item.qty));
         const actualUnitLabel = item.unit;
