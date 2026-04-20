@@ -383,13 +383,16 @@ export default function Pedidos() {
 
     const logoBase64 = await getLogoBase64();
 
-    const sectionsHtml = SECTIONS.filter((s) => items.some((i: any) => i.section === s)).map((section) => {
-      const sectionItemsRaw = items.filter((i: any) => i.section === section);
-      const sectionItems = applyPriorityOrder(sectionItemsRaw, orderId);
-      const prioritySet = new Set(priorityItems[orderId] || []);
+    const priorityList = priorityItems[orderId] || [];
+    const prioritySet = new Set(priorityList);
+    const priorityItemsOrdered = priorityList
+      .map((id) => items.find((i: any) => i.id === id))
+      .filter(Boolean);
 
-      const rows = sectionItems.map((item: any) => {
+    const buildRows = (sectionItems: any[], showPriorityBadge: boolean) =>
+      sectionItems.map((item: any) => {
         const isPriority = prioritySet.has(item.id);
+        const priorityIdx = isPriority ? priorityList.indexOf(item.id) + 1 : 0;
         const qtyValue = formatQty(Number(item.qty));
         const actualQtyValue = formatQty(Number(item.actual_qty ?? item.qty));
         const actualUnitLabel = item.unit;
@@ -406,29 +409,32 @@ export default function Pedidos() {
              <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:right;font-size:12px;color:#2a2a2a;font-weight:600;">€${lineTotalSemIva.toFixed(2)}</td>`
           : "";
 
-        const rowBg = isPriority ? "background:#fff8e1;" : "";
-        const priorityBadge = isPriority
-          ? `<span style="display:inline-block;background:#c0392b;color:#fff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:3px;margin-right:4px;vertical-align:middle;">1º</span>`
+        const orderBadge = showPriorityBadge && isPriority
+          ? `<span style="display:inline-block;background:#ef4444;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:3px;margin-right:6px;vertical-align:middle;">${priorityIdx}º</span>`
+          : "";
+        const sectionHint = showPriorityBadge
+          ? `<span style="display:inline-block;background:#f5f5f5;color:#888;font-size:8px;font-weight:600;padding:1px 4px;border-radius:2px;margin-left:6px;vertical-align:middle;">${item.section}</span>`
           : "";
 
-        return `<tr style="${rowBg}">
+        return `<tr>
           <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;width:40px;">
             <div style="width:16px;height:16px;border:2px solid #666;border-radius:3px;display:inline-block;"></div>
           </td>
           <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;font-size:13px;color:#2a2a2a;font-weight:700;width:50px;">${qtyValue}</td>
-          <td style="padding:6px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;font-weight:500;">${priorityBadge}${item.product_name}</td>
+          <td style="padding:6px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;font-weight:500;">${orderBadge}${item.product_name}${sectionHint}</td>
           <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${realQtyContent}</td>
           ${priceCol}
         </tr>`;
       }).join("");
 
-      const priceHeaders = showReadyValues
-        ? `<th style="padding:5px 8px;font-size:9px;text-align:right;border:1px solid #d7d7d7;width:70px;">Preço</th>
-           <th style="padding:5px 8px;font-size:9px;text-align:right;border:1px solid #d7d7d7;width:80px;">Total</th>`
-        : "";
+    const priceHeaders = showReadyValues
+      ? `<th style="padding:5px 8px;font-size:9px;text-align:right;border:1px solid #d7d7d7;width:70px;">Preço</th>
+         <th style="padding:5px 8px;font-size:9px;text-align:right;border:1px solid #d7d7d7;width:80px;">Total</th>`
+      : "";
 
-      return `<div style="margin-bottom:10px;">
-        <div style="font-size:13px;font-weight:700;color:#c0392b;margin-bottom:4px;padding:4px 8px;background:#fef2f2;border-left:3px solid #c0392b;border-radius:2px;">${section}</div>
+    const buildSectionBlock = (title: string, rowsHtml: string, accent: string, bg: string) => `
+      <div style="margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:700;color:${accent};margin-bottom:4px;padding:4px 8px;background:${bg};border-left:3px solid ${accent};border-radius:2px;">${title}</div>
         <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
           <thead><tr style="background:#f5f5f5;">
             <th style="padding:5px 6px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:40px;">✓</th>
@@ -437,9 +443,22 @@ export default function Pedidos() {
             <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:130px;">Peso / Qtd Real</th>
             ${priceHeaders}
           </tr></thead>
-          <tbody>${rows}</tbody>
+          <tbody>${rowsHtml}</tbody>
         </table>
       </div>`;
+
+    const priorityBlock = priorityItemsOrdered.length > 0
+      ? buildSectionBlock(
+          `🚛 Primeiros a entrar na carrinha (${priorityItemsOrdered.length})`,
+          buildRows(priorityItemsOrdered, true),
+          "#ef4444",
+          "#fef2f2",
+        )
+      : "";
+
+    const sectionsHtml = priorityBlock + SECTIONS.filter((s) => items.some((i: any) => i.section === s && !prioritySet.has(i.id))).map((section) => {
+      const sectionItems = items.filter((i: any) => i.section === section && !prioritySet.has(i.id));
+      return buildSectionBlock(section, buildRows(sectionItems, false), "#c0392b", "#fef2f2");
     }).join("");
 
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Pedido ${(order as any).store_name}</title>
@@ -614,7 +633,7 @@ export default function Pedidos() {
 
                       {(user.role === "admin" || user.role === "armazem") && !isEditing && (
                         <p className="text-[11px] text-muted-foreground bg-secondary/40 rounded-md px-2 py-1.5">
-                          ⬆️ Marca os itens que entram <strong className="text-foreground">primeiro na carrinha</strong> — eles vão para o topo da lista (e da impressão) na ordem em que forem marcados.
+                          ⬆️ Marca os itens que entram <strong className="text-foreground">primeiro na carrinha</strong> — eles aparecem numa secção própria no topo (e da impressão), na ordem em que forem marcados.
                           {(priorityItems[order.id] || []).length > 0 && (
                             <button
                               type="button"
@@ -627,7 +646,100 @@ export default function Pedidos() {
                         </p>
                       )}
 
-                      {SECTIONS.filter((s) => displayItems.some((i: any) => i.section === s)).map((section) => {
+                      {(() => {
+                        const prioritySet = new Set(priorityItems[order.id] || []);
+                        const priorityList = priorityItems[order.id] || [];
+                        const priorityOrdered = priorityList
+                          .map((id) => displayItems.find((i: any) => i.id === id))
+                          .filter(Boolean) as any[];
+
+                        const renderItem = (item: any, opts: { showSection?: boolean } = {}) => {
+                          const isPriority = prioritySet.has(item.id);
+                          const priorityIndex = isPriority ? priorityList.indexOf(item.id) + 1 : 0;
+                          return (
+                            <div key={item.id} className={`text-sm rounded-md transition-colors ${isPriority ? "bg-primary/5 border-l-2 border-primary pl-2 py-1" : ""}`}>
+                              <div className="flex items-center gap-2">
+                                {(user.role === "admin" || user.role === "armazem") && !isEditing && (
+                                  <Checkbox
+                                    checked={isPriority}
+                                    onCheckedChange={() => togglePriority(order.id, item.id)}
+                                    className="h-4 w-4"
+                                    aria-label="Marcar como prioritário"
+                                  />
+                                )}
+                                {isPriority && (
+                                  <span
+                                    className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded text-[11px] font-extrabold"
+                                    style={{ color: "#ef4444", border: "1.5px solid #ef4444", background: "rgba(239,68,68,0.08)" }}
+                                  >
+                                    {priorityIndex}º
+                                  </span>
+                                )}
+                                <span className="text-foreground flex-1">
+                                  {Number(item.qty)} {item.unit} — {item.product_name}
+                                  {opts.showSection && (
+                                    <span className="ml-2 text-[10px] text-muted-foreground bg-secondary/60 rounded px-1.5 py-0.5">{item.section}</span>
+                                  )}
+                                  {!isEditing && item.actual_qty != null && (
+                                    <span className="text-primary text-xs ml-2">Real: {Number(item.actual_qty)} {item.unit}</span>
+                                  )}
+                                </span>
+                                {user.role === "admin" && !isEditing && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveItem(order.id, item.id, item.product_name)}
+                                    className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                                    title="Remover item"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                              {isEditing && (
+                                <div className="flex items-center gap-2 ml-6 mt-1">
+                                  <div className="flex flex-col"><label className="text-[10px] text-muted-foreground">Peso/Qtd</label>
+                                    <Input type="number" step="0.01" placeholder={String(item.qty)} value={item.actual_qty ?? ""} onChange={(e) => updateEditItem(order.id, item.id, "actual_qty", parseFloat(e.target.value) || 0)} className="w-20 h-7 text-xs" />
+                                  </div>
+                                  <div className="flex flex-col"><label className="text-[10px] text-muted-foreground">Preço Un.</label>
+                                    <Input type="number" step="0.01" placeholder={Number(item.unit_price).toFixed(2)} value={item.actual_price ?? ""} onChange={(e) => updateEditItem(order.id, item.id, "actual_price", parseFloat(e.target.value) || 0)} className="w-20 h-7 text-xs" />
+                                  </div>
+                                  <div className="flex flex-col"><label className="text-[10px] text-muted-foreground">IVA % (predefinido: {item.vat_rate}%)</label>
+                                    <Input type="number" step="1" placeholder={String(item.vat_rate)} value={item.actual_vat ?? item.vat_rate} onChange={(e) => updateEditItem(order.id, item.id, "actual_vat", parseFloat(e.target.value) || 0)} className="w-20 h-7 text-xs" />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        };
+
+                        return (
+                          <>
+                            {priorityOrdered.length > 0 && (
+                              <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-3">
+                                <p className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: "#ef4444" }}>
+                                  🚛 Primeiros a entrar na carrinha
+                                  <span className="text-[10px] font-normal text-muted-foreground">({priorityOrdered.length})</span>
+                                </p>
+                                <div className="space-y-1">
+                                  {priorityOrdered.map((item) => renderItem(item, { showSection: true }))}
+                                </div>
+                              </div>
+                            )}
+
+                            {SECTIONS.filter((s) => displayItems.some((i: any) => i.section === s && !prioritySet.has(i.id))).map((section) => {
+                              const sectionItems = displayItems.filter((i: any) => i.section === section && !prioritySet.has(i.id));
+                              return (
+                                <div key={section}>
+                                  <p className="text-xs text-primary font-semibold mb-1">{section}</p>
+                                  <div className="space-y-1">{sectionItems.map((item: any) => renderItem(item))}</div>
+                                </div>
+                              );
+                            })}
+                          </>
+                        );
+                      })()}
+
+                      {false && SECTIONS.filter((s) => displayItems.some((i: any) => i.section === s)).map((section) => {
                         const sectionItems = applyPriorityOrder(
                           displayItems.filter((i: any) => i.section === section),
                           order.id,
