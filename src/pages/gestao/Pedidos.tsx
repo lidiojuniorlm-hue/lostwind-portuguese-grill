@@ -653,7 +653,7 @@ export default function Pedidos() {
                                     />
                                   )}
                                   {isPriority && (
-                                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded bg-primary text-primary-foreground text-[10px] font-bold">
+                                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded bg-background border border-primary text-primary text-[10px] font-bold">
                                       {priorityIndex}º
                                     </span>
                                   )}
