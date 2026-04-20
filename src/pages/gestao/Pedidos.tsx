@@ -384,7 +384,9 @@ export default function Pedidos() {
     const logoBase64 = await getLogoBase64();
 
     const sectionsHtml = SECTIONS.filter((s) => items.some((i: any) => i.section === s)).map((section) => {
-      const sectionItems = items.filter((i: any) => i.section === section);
+      const sectionItemsRaw = items.filter((i: any) => i.section === section);
+      const sectionItems = applyPriorityOrder(sectionItemsRaw, orderId);
+      const prioritySet = new Set(priorityItems[orderId] || []);
 
       const rows = sectionItems.map((item: any) => {
         const qtyValue = formatQty(Number(item.qty));
