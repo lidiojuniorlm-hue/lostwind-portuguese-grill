@@ -465,10 +465,10 @@ export default function Pedidos() {
       <style>
         @page { size:A4; margin:8mm; }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Arial','Helvetica Neue',sans-serif; padding:12px 16px; color:#333; font-size:12px; }
+        body { font-family:'Arial','Helvetica Neue',sans-serif; padding:12px 16px; color:#000; font-size:12px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       </style></head>
       <body>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#555;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#000;font-weight:600;margin-bottom:12px;">
           <div>${printedAt.toLocaleDateString("pt-PT")} ${printedAt.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</div>
           <div>Pedido ${(order as any).store_name}</div>
         </div>
@@ -476,15 +476,15 @@ export default function Pedidos() {
           <img src="${logoBase64}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
           <div style="text-align:center;">
             <div style="font-size:18px;font-weight:800;color:#000;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;">Lost Wind Churrasqueira</div>
-            <div style="font-size:11px;color:#666;margin-top:2px;text-transform:uppercase;letter-spacing:1px;">Pedido de Stock</div>
+            <div style="font-size:11px;color:#000;font-weight:700;margin-top:2px;text-transform:uppercase;letter-spacing:1px;">Pedido de Stock</div>
           </div>
         </div>
         <div style="text-align:center;margin:8px 0 12px;padding:10px 14px;background:linear-gradient(90deg,#fef2f2 0%,#fff5f5 50%,#fef2f2 100%);border-top:2px solid #c0392b;border-bottom:2px solid #c0392b;">
           <div style="font-size:10px;color:#7a1d14;text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:2px;">Loja de Destino</div>
           <div style="font-size:26px;font-weight:900;color:#c0392b;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;line-height:1.1;">${(order as any).store_name}</div>
         </div>
-        <div style="text-align:center;font-size:11px;color:#666;margin-bottom:10px;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })} às ${new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} · Estado: ${ORDER_STATUS_LABELS[(order as any).status as OrderStatus]}</div>
-        <div style="font-size:10px;color:#555;margin:0 0 8px 4px;">📝 ${showReadyValues ? "Valores reais digitalizados" : "Qtd real / peso para preenchimento manual"}${(priorityItems[orderId] || []).length > 0 ? ` · <span style="color:#c0392b;font-weight:700;">Itens marcados com 1º entram primeiro na carrinha</span>` : ""}</div>
+        <div style="text-align:center;font-size:11px;color:#000;font-weight:600;margin-bottom:10px;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })} às ${new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} · Estado: ${ORDER_STATUS_LABELS[(order as any).status as OrderStatus]}</div>
+        <div style="font-size:10.5px;color:#000;font-weight:600;margin:0 0 8px 4px;">📝 ${showReadyValues ? "Valores reais digitalizados" : "Qtd real / peso para preenchimento manual"}${(priorityItems[orderId] || []).length > 0 ? ` · <span style="color:#dc2626;font-weight:800;">Itens marcados com 1º entram primeiro na carrinha</span>` : ""}</div>
         ${sectionsHtml}
         ${financialSummary ? `
           <div style="margin-top:10px;border-top:2px solid #333;padding-top:8px;">
