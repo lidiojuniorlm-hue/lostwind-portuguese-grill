@@ -367,9 +367,10 @@ export function useDeleteOrder() {
 }
 
 // ─── Users (via edge function) ───
-export function useUsers() {
+export function useUsers(enabled: boolean = true) {
   return useQuery({
     queryKey: ["users"],
+    enabled,
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("manage-users", {
         body: { action: "list" },
