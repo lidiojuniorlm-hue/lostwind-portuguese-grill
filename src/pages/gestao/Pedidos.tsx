@@ -465,7 +465,7 @@ export default function Pedidos() {
       <style>
         @page { size:A4; margin:8mm; }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Arial','Helvetica Neue',sans-serif; padding:12px 16px; color:#000; font-size:12px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        body { font-family:'Arial','Helvetica Neue',sans-serif; padding:12px 16px; color:black; font-size:12px; }
       </style></head>
       <body>
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#000;font-weight:600;margin-bottom:12px;">
