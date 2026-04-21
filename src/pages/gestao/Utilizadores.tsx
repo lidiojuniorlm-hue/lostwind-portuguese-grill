@@ -26,7 +26,8 @@ interface EditForm {
 
 export default function Utilizadores() {
   const { user } = useAuth();
-  const { data: users = [], isLoading } = useUsers();
+  const isAdmin = user?.role === "admin";
+  const { data: users = [], isLoading } = useUsers(isAdmin);
   const { data: stores = [] } = useStores();
   const qc = useQueryClient();
   const [editing, setEditing] = useState<EditForm | null>(null);
