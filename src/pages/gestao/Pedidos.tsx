@@ -401,46 +401,46 @@ export default function Pedidos() {
         const lineTotalSemIva = e.subtotal;
 
         const realQtyContent = showReadyValues
-          ? `<span style="font-weight:600;color:#2f2f2f;">${actualQtyValue}</span><span style="display:inline-block;width:6px;"></span><span style="font-size:10px;color:#2a2a2a;">${actualUnitLabel}</span>`
+          ? `<span style="font-weight:700;color:#000;">${actualQtyValue}</span><span style="display:inline-block;width:6px;"></span><span style="font-size:10px;color:#000;font-weight:600;">${actualUnitLabel}</span>`
           : `<span style="display:inline-block;width:92px;height:14px;"></span>`;
 
         const priceCol = showReadyValues
-          ? `<td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:right;font-size:11px;color:#2a2a2a;">€${unitPriceSemIva.toFixed(2)}</td>
-             <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:right;font-size:12px;color:#2a2a2a;font-weight:600;">€${lineTotalSemIva.toFixed(2)}</td>`
+          ? `<td style="padding:6px 10px;border:1px solid #b5b5b5;text-align:right;font-size:11px;color:#000;font-weight:600;">€${unitPriceSemIva.toFixed(2)}</td>
+             <td style="padding:6px 10px;border:1px solid #b5b5b5;text-align:right;font-size:12px;color:#000;font-weight:700;">€${lineTotalSemIva.toFixed(2)}</td>`
           : "";
 
         const orderBadge = showPriorityBadge && isPriority
-          ? `<span style="display:inline-block;background:#ef4444;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:3px;margin-right:6px;vertical-align:middle;">${priorityIdx}º</span>`
+          ? `<span style="display:inline-block;background:#dc2626;color:#ffffff;font-size:10px;font-weight:900;padding:2px 7px;border-radius:3px;margin-right:6px;vertical-align:middle;border:1px solid #991b1b;">${priorityIdx}º</span>`
           : "";
         const sectionHint = showPriorityBadge
-          ? `<span style="display:inline-block;background:#f5f5f5;color:#888;font-size:8px;font-weight:600;padding:1px 4px;border-radius:2px;margin-left:6px;vertical-align:middle;">${item.section}</span>`
+          ? `<span style="display:inline-block;background:#eaeaea;color:#333;font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px;margin-left:6px;vertical-align:middle;">${item.section}</span>`
           : "";
 
         return `<tr>
-          <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;width:40px;">
-            <div style="width:16px;height:16px;border:2px solid #666;border-radius:3px;display:inline-block;"></div>
+          <td style="padding:6px 8px;border:1px solid #b5b5b5;text-align:center;width:40px;">
+            <div style="width:16px;height:16px;border:2px solid #000;border-radius:3px;display:inline-block;"></div>
           </td>
-          <td style="padding:6px 8px;border:1px solid #d7d7d7;text-align:center;font-size:13px;color:#2a2a2a;font-weight:700;width:50px;">${qtyValue}</td>
-          <td style="padding:6px 10px;border:1px solid #d7d7d7;font-size:12px;color:#2a2a2a;font-weight:500;">${orderBadge}${item.product_name}${sectionHint}</td>
-          <td style="padding:6px 10px;border:1px solid #d7d7d7;text-align:center;font-size:12px;color:#2a2a2a;">${realQtyContent}</td>
+          <td style="padding:6px 8px;border:1px solid #b5b5b5;text-align:center;font-size:14px;color:#000;font-weight:800;width:50px;">${qtyValue}</td>
+          <td style="padding:6px 10px;border:1px solid #b5b5b5;font-size:12.5px;color:#000;font-weight:700;">${orderBadge}${item.product_name}${sectionHint}</td>
+          <td style="padding:6px 10px;border:1px solid #b5b5b5;text-align:center;font-size:12px;color:#000;">${realQtyContent}</td>
           ${priceCol}
         </tr>`;
       }).join("");
 
     const priceHeaders = showReadyValues
-      ? `<th style="padding:5px 8px;font-size:9px;text-align:right;border:1px solid #d7d7d7;width:70px;">Preço</th>
-         <th style="padding:5px 8px;font-size:9px;text-align:right;border:1px solid #d7d7d7;width:80px;">Total</th>`
+      ? `<th style="padding:6px 8px;font-size:10px;text-align:right;border:1px solid #000;width:70px;color:#000;font-weight:800;">Preço</th>
+         <th style="padding:6px 8px;font-size:10px;text-align:right;border:1px solid #000;width:80px;color:#000;font-weight:800;">Total</th>`
       : "";
 
     const buildSectionBlock = (title: string, rowsHtml: string, accent: string, bg: string) => `
       <div style="margin-bottom:10px;">
-        <div style="font-size:13px;font-weight:700;color:${accent};margin-bottom:4px;padding:4px 8px;background:${bg};border-left:3px solid ${accent};border-radius:2px;">${title}</div>
+        <div style="font-size:13px;font-weight:800;color:${accent};margin-bottom:4px;padding:5px 8px;background:${bg};border-left:4px solid ${accent};border-radius:2px;">${title}</div>
         <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-          <thead><tr style="background:#f5f5f5;">
-            <th style="padding:5px 6px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:40px;">✓</th>
-            <th style="padding:5px 6px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:50px;">Qtd</th>
-            <th style="padding:5px 8px;font-size:9px;text-align:left;border:1px solid #d7d7d7;">Produto</th>
-            <th style="padding:5px 8px;font-size:9px;text-align:center;border:1px solid #d7d7d7;width:130px;">Peso / Qtd Real</th>
+          <thead><tr style="background:#e5e5e5;">
+            <th style="padding:6px 6px;font-size:10px;text-align:center;border:1px solid #000;width:40px;color:#000;font-weight:800;">✓</th>
+            <th style="padding:6px 6px;font-size:10px;text-align:center;border:1px solid #000;width:50px;color:#000;font-weight:800;">Qtd</th>
+            <th style="padding:6px 8px;font-size:10px;text-align:left;border:1px solid #000;color:#000;font-weight:800;">Produto</th>
+            <th style="padding:6px 8px;font-size:10px;text-align:center;border:1px solid #000;width:130px;color:#000;font-weight:800;">Peso / Qtd Real</th>
             ${priceHeaders}
           </tr></thead>
           <tbody>${rowsHtml}</tbody>
@@ -465,10 +465,10 @@ export default function Pedidos() {
       <style>
         @page { size:A4; margin:8mm; }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Arial','Helvetica Neue',sans-serif; padding:12px 16px; color:#333; font-size:12px; }
+        body { font-family:'Arial','Helvetica Neue',sans-serif; padding:12px 16px; color:#000; font-size:12px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       </style></head>
       <body>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#555;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#000;font-weight:600;margin-bottom:12px;">
           <div>${printedAt.toLocaleDateString("pt-PT")} ${printedAt.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</div>
           <div>Pedido ${(order as any).store_name}</div>
         </div>
@@ -476,15 +476,15 @@ export default function Pedidos() {
           <img src="${logoBase64}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
           <div style="text-align:center;">
             <div style="font-size:18px;font-weight:800;color:#000;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;">Lost Wind Churrasqueira</div>
-            <div style="font-size:11px;color:#666;margin-top:2px;text-transform:uppercase;letter-spacing:1px;">Pedido de Stock</div>
+            <div style="font-size:11px;color:#000;font-weight:700;margin-top:2px;text-transform:uppercase;letter-spacing:1px;">Pedido de Stock</div>
           </div>
         </div>
         <div style="text-align:center;margin:8px 0 12px;padding:10px 14px;background:linear-gradient(90deg,#fef2f2 0%,#fff5f5 50%,#fef2f2 100%);border-top:2px solid #c0392b;border-bottom:2px solid #c0392b;">
           <div style="font-size:10px;color:#7a1d14;text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:2px;">Loja de Destino</div>
           <div style="font-size:26px;font-weight:900;color:#c0392b;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;line-height:1.1;">${(order as any).store_name}</div>
         </div>
-        <div style="text-align:center;font-size:11px;color:#666;margin-bottom:10px;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })} às ${new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} · Estado: ${ORDER_STATUS_LABELS[(order as any).status as OrderStatus]}</div>
-        <div style="font-size:10px;color:#555;margin:0 0 8px 4px;">📝 ${showReadyValues ? "Valores reais digitalizados" : "Qtd real / peso para preenchimento manual"}${(priorityItems[orderId] || []).length > 0 ? ` · <span style="color:#c0392b;font-weight:700;">Itens marcados com 1º entram primeiro na carrinha</span>` : ""}</div>
+        <div style="text-align:center;font-size:11px;color:#000;font-weight:600;margin-bottom:10px;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })} às ${new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} · Estado: ${ORDER_STATUS_LABELS[(order as any).status as OrderStatus]}</div>
+        <div style="font-size:10.5px;color:#000;font-weight:600;margin:0 0 8px 4px;">📝 ${showReadyValues ? "Valores reais digitalizados" : "Qtd real / peso para preenchimento manual"}${(priorityItems[orderId] || []).length > 0 ? ` · <span style="color:#dc2626;font-weight:800;">Itens marcados com 1º entram primeiro na carrinha</span>` : ""}</div>
         ${sectionsHtml}
         ${financialSummary ? `
           <div style="margin-top:10px;border-top:2px solid #333;padding-top:8px;">
