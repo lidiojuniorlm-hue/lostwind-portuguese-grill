@@ -29,20 +29,22 @@ Deno.serve(async (req) => {
     // Admin client for privileged operations
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    // Validate token using anon client with the caller's auth header (proper signing-keys flow)
+    // Validate token using anon client with the caller's auth header.
+    // We use getUser(token) instead of getClaims because the latter is not
+    // available in supabase-js@2.49.1.
     const supabaseAuth = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) {
+    const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+    if (userError || !userData?.user?.id) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const callerId = claimsData.claims.sub as string;
+    const callerId = userData.user.id;
 
     // Check admin role
     const { data: roleData } = await supabaseAdmin
