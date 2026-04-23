@@ -94,14 +94,29 @@ export function useOrders(userRole?: string, userId?: string, userStore?: string
       const orderIds = (ordersData || []).map((o) => o.id);
       if (orderIds.length === 0) return [];
 
-      const { data: itemsData, error: itemsErr } = await supabase
-        .from("order_items")
-        .select("*")
-        .in("order_id", orderIds);
-      if (itemsErr) throw itemsErr;
+      // Fetch order_items in pages to bypass Supabase's default 1000-row limit.
+      // Without paging, orders past the limit appear empty ("zeroed") in the UI.
+      const PAGE_SIZE = 1000;
+      const itemsData: Tables<"order_items">[] = [];
+      let from = 0;
+      // Loop until we get a page smaller than PAGE_SIZE (last page)
+      // or an empty page (safety stop).
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data: pageData, error: pageErr } = await supabase
+          .from("order_items")
+          .select("*")
+          .in("order_id", orderIds)
+          .range(from, from + PAGE_SIZE - 1);
+        if (pageErr) throw pageErr;
+        if (!pageData || pageData.length === 0) break;
+        itemsData.push(...(pageData as Tables<"order_items">[]));
+        if (pageData.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
 
       const itemsByOrder: Record<string, Tables<"order_items">[]> = {};
-      (itemsData || []).forEach((item) => {
+      itemsData.forEach((item) => {
         if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
         itemsByOrder[item.order_id].push(item);
       });
