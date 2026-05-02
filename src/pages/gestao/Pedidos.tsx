@@ -263,24 +263,25 @@ export default function Pedidos() {
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Guia de Transporte — ${(order as any).store_name}</title>
       <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Segoe UI',Arial,sans-serif; padding:20px; color:#1a1a1a; font-size:9px; }
+        /* MODO COLORIDO TEMPORÁRIO — tinta preta em falta */
+        body { font-family:'Segoe UI',Arial,sans-serif; padding:20px; color:#1e3a8a; font-size:9px; }
         .header { text-align:center; border-bottom:3px solid #c0392b; padding-bottom:10px; margin-bottom:12px; }
         .header h1 { font-size:16px; font-weight:800; color:#c0392b; letter-spacing:2px; text-transform:uppercase; }
-        .header p { font-size:8px; color:#666; margin-top:2px; }
+        .header p { font-size:8px; color:#15803d; margin-top:2px; font-weight:600; }
         .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; font-size:9px; }
-        .info-box { background:#f8f8f8; border:1px solid #e0e0e0; border-radius:4px; padding:6px 8px; }
-        .info-box label { font-size:7px; text-transform:uppercase; color:#888; font-weight:600; letter-spacing:0.5px; display:block; margin-bottom:1px; }
-        .info-box span { font-weight:600; color:#333; }
+        .info-box { background:#eff6ff; border:1px solid #2563eb; border-radius:4px; padding:6px 8px; }
+        .info-box label { font-size:7px; text-transform:uppercase; color:#c0392b; font-weight:700; letter-spacing:0.5px; display:block; margin-bottom:1px; }
+        .info-box span { font-weight:700; color:#1e3a8a; }
         table { width:100%; border-collapse:collapse; margin-bottom:12px; }
-        th { background:#c0392b; color:#fff; padding:4px 6px; font-size:8px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600; }
-        td { padding:3px 6px; border-bottom:1px solid #eee; font-size:8px; }
-        tr:nth-child(even) { background:#fafafa; }
-        .sig-section { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:16px; padding-top:10px; border-top:1px solid #ddd; }
+        th { background:#c0392b; color:#fff; padding:4px 6px; font-size:8px; text-transform:uppercase; letter-spacing:0.5px; font-weight:700; border:1px solid #2563eb; }
+        td { padding:3px 6px; border:1px solid #93c5fd; font-size:8px; color:#1e3a8a; font-weight:600; }
+        tr:nth-child(even) td { background:#eff6ff; }
+        .sig-section { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:16px; padding-top:10px; border-top:2px solid #c0392b; }
         .sig-box { text-align:center; }
-        .sig-box p { font-size:8px; color:#666; margin-bottom:30px; }
-        .sig-line { border-top:1px solid #333; padding-top:3px; font-size:8px; font-weight:600; }
-        .footer { text-align:center; margin-top:12px; font-size:7px; color:#999; border-top:1px solid #eee; padding-top:6px; }
-        @media print { body { padding:10px; } }
+        .sig-box p { font-size:8px; color:#c0392b; margin-bottom:30px; font-weight:700; }
+        .sig-line { border-top:1px solid #2563eb; padding-top:3px; font-size:8px; font-weight:700; color:#1e3a8a; }
+        .footer { text-align:center; margin-top:12px; font-size:7px; color:#15803d; font-weight:600; border-top:1px solid #93c5fd; padding-top:6px; }
+        @media print { body { padding:10px; -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
       </style></head>
       <body>
         <div class="header">
@@ -298,7 +299,7 @@ export default function Pedidos() {
         <table>
           <thead><tr><th style="text-align:left;">Produto</th><th style="text-align:center;">Qtd</th><th style="text-align:center;">Unidade</th><th style="text-align:center;">Secção</th></tr></thead>
           <tbody>${items.map((item: any) => `<tr><td>${item.product_name}</td><td style="text-align:center;">${item.actual_qty ?? item.qty}</td><td style="text-align:center;">${item.unit}</td><td style="text-align:center;">${item.section}</td></tr>`).join("")}
-          <tr style="background:#f0f0f0;font-weight:600;"><td>TOTAL</td><td style="text-align:center;">${totalItems}</td><td colspan="2"></td></tr>
+          <tr style="background:#dcfce7;font-weight:800;color:#15803d;"><td style="color:#15803d;">TOTAL</td><td style="text-align:center;color:#15803d;">${totalItems}</td><td colspan="2"></td></tr>
           </tbody>
         </table>
         ${(order as any).notes ? `<p style="font-size:8px;margin-bottom:8px;"><strong>Observações:</strong> ${(order as any).notes?.replace(/\n/g, "<br/>")}</p>` : ""}
