@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOrders, useOrderMutations, useUsers, useLogActivity, useDeleteOrder, useProducts } from "@/hooks/useSupabaseData";
+import { useOrders, useOrderMutations, useUsers, useLogActivity, useDeleteOrder, useProducts, useStores } from "@/hooks/useSupabaseData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,7 @@ export default function Pedidos() {
   const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
   const { data: users = [] } = useUsers();
   const { data: products = [] } = useProducts();
+  const { data: stores = [] } = useStores();
   const { updateOrderStatus, updateOrderItems, addOrderItems, deleteOrderItem } = useOrderMutations();
   const deleteOrder = useDeleteOrder();
   const logActivity = useLogActivity();
