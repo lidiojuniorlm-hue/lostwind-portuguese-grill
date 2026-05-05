@@ -20,6 +20,7 @@ import Utilizadores from "./pages/gestao/Utilizadores.tsx";
 import Configuracoes from "./pages/gestao/Configuracoes.tsx";
 import Atividade from "./pages/gestao/Atividade.tsx";
 import Validades from "./pages/gestao/Validades.tsx";
+import Lojas from "./pages/gestao/Lojas.tsx";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="configuracoes" element={<Configuracoes />} />
               <Route path="atividade" element={<Atividade />} />
               <Route path="validades" element={<Validades />} />
+              <Route path="lojas" element={<Lojas />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
