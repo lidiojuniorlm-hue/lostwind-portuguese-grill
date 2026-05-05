@@ -268,12 +268,35 @@ export function useStores() {
       const { data, error } = await supabase
         .from("stores")
         .select("*")
-        .eq("active", true)
         .order("name");
       if (error) throw error;
       return data as Tables<"stores">[];
     },
   });
+}
+
+export function useStoreMutations() {
+  const qc = useQueryClient();
+  const updateStore = useMutation({
+    mutationFn: async (s: { id: string; address?: string | null; phone?: string | null; active?: boolean }) => {
+      const { error } = await supabase
+        .from("stores")
+        .update({ address: s.address ?? null, phone: s.phone ?? null, ...(s.active !== undefined ? { active: s.active } : {}) })
+        .eq("id", s.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["stores"] }),
+  });
+  const addStore = useMutation({
+    mutationFn: async (s: { name: string; address?: string | null; phone?: string | null }) => {
+      const { error } = await supabase
+        .from("stores")
+        .insert({ name: s.name, address: s.address ?? null, phone: s.phone ?? null });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["stores"] }),
+  });
+  return { updateStore, addStore };
 }
 
 // ─── Settings ───
