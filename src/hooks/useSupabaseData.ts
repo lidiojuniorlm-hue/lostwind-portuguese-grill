@@ -268,6 +268,7 @@ export function useStores() {
       const { data, error } = await supabase
         .from("stores")
         .select("*")
+        .eq("active", true)
         .order("name");
       if (error) throw error;
       return data as Tables<"stores">[];
