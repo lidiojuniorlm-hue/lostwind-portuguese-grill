@@ -310,21 +310,27 @@ export type Database = {
       stores: {
         Row: {
           active: boolean
+          address: string | null
           created_at: string
           id: string
           name: string
+          phone: string | null
         }
         Insert: {
           active?: boolean
+          address?: string | null
           created_at?: string
           id?: string
           name: string
+          phone?: string | null
         }
         Update: {
           active?: boolean
+          address?: string | null
           created_at?: string
           id?: string
           name?: string
+          phone?: string | null
         }
         Relationships: []
       }

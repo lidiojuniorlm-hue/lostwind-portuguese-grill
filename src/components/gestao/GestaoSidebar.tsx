@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, ClipboardList, Package, Users, LogOut, BarChart3, Warehouse, Euro, Truck, Settings, Clock, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, ClipboardList, Package, Users, LogOut, BarChart3, Warehouse, Euro, Truck, Settings, Clock, ShieldCheck, Store } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -58,6 +58,7 @@ export function GestaoSidebar() {
 
   const adminNav = [
     { title: "Produtos", url: "/gestao/produtos", icon: Package, roles: ["admin"] },
+    { title: "Lojas", url: "/gestao/lojas", icon: Store, roles: ["admin"] },
     { title: "Utilizadores", url: "/gestao/utilizadores", icon: Users, roles: ["admin"] },
     { title: "Configurações", url: "/gestao/configuracoes", icon: Settings, roles: ["admin"] },
   ].filter((item) => item.roles.includes(user.role));

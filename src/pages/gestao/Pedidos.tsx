@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOrders, useOrderMutations, useUsers, useLogActivity, useDeleteOrder, useProducts } from "@/hooks/useSupabaseData";
+import { useOrders, useOrderMutations, useUsers, useLogActivity, useDeleteOrder, useProducts, useStores } from "@/hooks/useSupabaseData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,7 @@ export default function Pedidos() {
   const { data: orders = [] } = useOrders(user?.role, user?.id, user?.store);
   const { data: users = [] } = useUsers();
   const { data: products = [] } = useProducts();
+  const { data: stores = [] } = useStores();
   const { updateOrderStatus, updateOrderItems, addOrderItems, deleteOrderItem } = useOrderMutations();
   const deleteOrder = useDeleteOrder();
   const logActivity = useLogActivity();
@@ -250,7 +251,7 @@ export default function Pedidos() {
   };
 
   // Print: Guia de Transporte
-  const handlePrintGuia = (orderId: string) => {
+  const handlePrintGuia = async (orderId: string) => {
     const order = orders.find((o: any) => o.id === orderId);
     if (!order) return;
     const createdByUser = users?.find((u: any) => u.id === (order as any).created_by);
@@ -259,19 +260,32 @@ export default function Pedidos() {
 
     const items = ((order as any).items || []).sort((a: any, b: any) => a.product_name.localeCompare(b.product_name));
     const totalItems = items.reduce((s: number, i: any) => s + Number(i.actual_qty ?? i.qty), 0);
+    const logoBase64 = await getLogoBase64();
+    const storeInfo = (stores as any[]).find((s) => s.name === (order as any).store_name);
+    const storeAddress = storeInfo?.address || "—";
+    const storePhone = storeInfo?.phone || "";
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("pt-PT");
+    const timeStr = now.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" });
 
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Guia de Transporte — ${(order as any).store_name}</title>
       <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         /* MODO COLORIDO TEMPORÁRIO — tinta preta em falta */
         body { font-family:'Segoe UI',Arial,sans-serif; padding:20px; color:#1e3a8a; font-size:9px; }
-        .header { text-align:center; border-bottom:3px solid #c0392b; padding-bottom:10px; margin-bottom:12px; }
-        .header h1 { font-size:16px; font-weight:800; color:#c0392b; letter-spacing:2px; text-transform:uppercase; }
-        .header p { font-size:8px; color:#15803d; margin-top:2px; font-weight:600; }
+        .header { display:flex; align-items:center; gap:14px; border-bottom:3px solid #c0392b; padding-bottom:10px; margin-bottom:12px; }
+        .header img { width:60px; height:60px; object-fit:contain; }
+        .header .brand { flex:1; }
+        .header h1 { font-size:18px; font-weight:800; color:#c0392b; letter-spacing:1.5px; text-transform:uppercase; }
+        .header .company { font-size:10px; color:#1e3a8a; font-weight:700; margin-top:2px; }
+        .header .meta { font-size:8px; color:#15803d; margin-top:1px; font-weight:600; }
+        .header .doc-meta { text-align:right; font-size:8px; color:#1e3a8a; font-weight:700; }
+        .header .doc-meta strong { color:#c0392b; display:block; font-size:9px; }
         .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; font-size:9px; }
         .info-box { background:#eff6ff; border:1px solid #2563eb; border-radius:4px; padding:6px 8px; }
         .info-box label { font-size:7px; text-transform:uppercase; color:#c0392b; font-weight:700; letter-spacing:0.5px; display:block; margin-bottom:1px; }
         .info-box span { font-weight:700; color:#1e3a8a; }
+        .info-box.full { grid-column:1 / -1; }
         table { width:100%; border-collapse:collapse; margin-bottom:12px; }
         th { background:#c0392b; color:#fff; padding:4px 6px; font-size:8px; text-transform:uppercase; letter-spacing:0.5px; font-weight:700; border:1px solid #2563eb; }
         td { padding:3px 6px; border:1px solid #93c5fd; font-size:8px; color:#1e3a8a; font-weight:600; }
@@ -285,16 +299,24 @@ export default function Pedidos() {
       </style></head>
       <body>
         <div class="header">
-          <h1>Guia de Transporte / Remessa</h1>
-          <p>Lost Wind Churrasqueira — Documento de Acompanhamento de Mercadorias</p>
+          ${logoBase64 ? `<img src="${logoBase64}" alt="Lost Wind"/>` : ""}
+          <div class="brand">
+            <h1>Guia de Transporte / Remessa</h1>
+            <div class="company">Lost Wind Churrasqueira, Lda.</div>
+            <div class="meta">Contribuinte n.º 514 960 965 · Documento de Acompanhamento de Mercadorias</div>
+          </div>
+          <div class="doc-meta">
+            <strong>GT-${(order as any).id.slice(0, 8).toUpperCase()}</strong>
+            ${dateStr}<br/>${timeStr}
+          </div>
         </div>
         <div class="info-grid">
-          <div class="info-box"><label>N.º Guia</label><span>GT-${(order as any).id.slice(0, 8).toUpperCase()}</span></div>
-          <div class="info-box"><label>Data / Hora</label><span>${new Date().toLocaleDateString("pt-PT")} ${new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</span></div>
-          <div class="info-box"><label>Origem</label><span>Armazém Central</span></div>
-          <div class="info-box"><label>Destino</label><span>${(order as any).store_name}</span></div>
-          <div class="info-box"><label>Solicitado por</label><span>${createdByUser?.name || "—"}</span></div>
+          <div class="info-box"><label>Data / Hora de Emissão</label><span>${dateStr} — ${timeStr}</span></div>
           <div class="info-box"><label>N.º Pedido</label><span>${(order as any).id.slice(0, 8).toUpperCase()}</span></div>
+          <div class="info-box full"><label>Origem (Armazém)</label><span>Castanheira do Ribatejo, Estrada da Azinhada do Porto da Areia, n.º 10, 2600-128</span></div>
+          <div class="info-box full"><label>Destino — ${(order as any).store_name}</label><span>${storeAddress}${storePhone ? ` · Tel: ${storePhone}` : ""}</span></div>
+          <div class="info-box"><label>Solicitado por</label><span>${createdByUser?.name || "—"}</span></div>
+          <div class="info-box"><label>N.º Itens</label><span>${items.length} linha(s) · ${totalItems} unid.</span></div>
         </div>
         <table>
           <thead><tr><th style="text-align:left;">Produto</th><th style="text-align:center;">Qtd</th><th style="text-align:center;">Unidade</th><th style="text-align:center;">Secção</th></tr></thead>
@@ -307,7 +329,7 @@ export default function Pedidos() {
           <div class="sig-box"><p>Responsável do Armazém</p><div class="sig-line">Assinatura / Carimbo</div></div>
           <div class="sig-box"><p>Transportador / Condutor</p><div class="sig-line">Assinatura / Carimbo</div></div>
         </div>
-        <div class="footer">Documento gerado automaticamente pelo sistema Lost Wind — ${new Date().toLocaleDateString("pt-PT")} ${new Date().toLocaleTimeString("pt-PT")}</div>
+        <div class="footer">Lost Wind Churrasqueira, Lda. · NIF 514 960 965 · Documento gerado automaticamente em ${dateStr} às ${now.toLocaleTimeString("pt-PT")}</div>
         <script>window.onload=function(){window.print();}<\/script>
       </body></html>`);
     printWindow.document.close();
