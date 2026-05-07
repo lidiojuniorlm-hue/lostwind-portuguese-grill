@@ -424,19 +424,19 @@ export default function Pedidos() {
         const lineTotalSemIva = e.subtotal;
 
         const realQtyContent = showReadyValues
-          ? `<span style="font-weight:800;color:#000;">${actualQtyValue}</span><span style="display:inline-block;width:6px;"></span><span style="font-size:10px;color:#000;font-weight:700;">${actualUnitLabel}</span>`
+          ? `<span style="font-weight:800;color:#c0392b;">${actualQtyValue}</span><span style="display:inline-block;width:6px;"></span><span style="font-size:10px;color:#1e3a8a;font-weight:700;">${actualUnitLabel}</span>`
           : `<span style="display:inline-block;width:92px;height:14px;"></span>`;
 
         const priceCol = showReadyValues
-          ? `<td style="padding:6px 10px;border:1px solid #000;text-align:right;font-size:11px;color:#000;font-weight:700;">€${unitPriceSemIva.toFixed(2)}</td>
-             <td style="padding:6px 10px;border:1px solid #000;text-align:right;font-size:12px;color:#000;font-weight:800;">€${lineTotalSemIva.toFixed(2)}</td>`
+          ? `<td style="padding:6px 10px;border:1px solid #93c5fd;text-align:right;font-size:11px;color:#1e3a8a;font-weight:700;">€${unitPriceSemIva.toFixed(2)}</td>
+             <td style="padding:6px 10px;border:1px solid #93c5fd;text-align:right;font-size:12px;color:#c0392b;font-weight:800;">€${lineTotalSemIva.toFixed(2)}</td>`
           : "";
 
         const orderBadge = showPriorityBadge && isPriority
-          ? `<span style="display:inline-block;background:#000;color:#ffffff;font-size:10px;font-weight:900;padding:2px 7px;border-radius:3px;margin-right:6px;vertical-align:middle;border:1px solid #000;">${priorityIdx}º</span>`
+          ? `<span style="display:inline-block;background:#c0392b;color:#ffffff;font-size:10px;font-weight:900;padding:2px 7px;border-radius:3px;margin-right:6px;vertical-align:middle;border:1px solid #c0392b;">${priorityIdx}º</span>`
           : "";
         const sectionHint = showPriorityBadge
-          ? `<span style="display:inline-block;background:#fff;color:#000;font-size:8px;font-weight:800;padding:1px 4px;border-radius:2px;margin-left:6px;vertical-align:middle;border:1px solid #000;">${item.section}</span>`
+          ? `<span style="display:inline-block;background:#1e3a8a;color:#ffffff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:2px;margin-left:6px;vertical-align:middle;border:1px solid #1e3a8a;">${item.section}</span>`
           : "";
 
         return `<tr>
