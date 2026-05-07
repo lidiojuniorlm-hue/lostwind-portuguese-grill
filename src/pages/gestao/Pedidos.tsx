@@ -451,19 +451,19 @@ export default function Pedidos() {
       }).join("");
 
     const priceHeaders = showReadyValues
-      ? `<th style="padding:6px 8px;font-size:10px;text-align:right;border:1px solid #000;width:70px;color:#ffffff;background:#000;font-weight:800;">Preço</th>
-         <th style="padding:6px 8px;font-size:10px;text-align:right;border:1px solid #000;width:80px;color:#ffffff;background:#000;font-weight:800;">Total</th>`
+      ? `<th style="padding:6px 8px;font-size:10px;text-align:right;border:1px solid #93c5fd;width:70px;color:#ffffff;background:#1e3a8a;font-weight:800;">Preço</th>
+         <th style="padding:6px 8px;font-size:10px;text-align:right;border:1px solid #93c5fd;width:80px;color:#ffffff;background:#1e3a8a;font-weight:800;">Total</th>`
       : "";
 
     const buildSectionBlock = (title: string, rowsHtml: string, accent: string, bg: string) => `
       <div style="margin-bottom:10px;">
         <div style="font-size:13px;font-weight:800;color:${accent};margin-bottom:4px;padding:5px 8px;background:${bg};border-left:4px solid ${accent};border-radius:2px;">${title}</div>
         <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-          <thead><tr style="background:#000;">
-            <th style="padding:6px 6px;font-size:10px;text-align:center;border:1px solid #000;width:40px;color:#ffffff;font-weight:800;">✓</th>
-            <th style="padding:6px 6px;font-size:10px;text-align:center;border:1px solid #000;width:50px;color:#ffffff;font-weight:800;">Qtd</th>
-            <th style="padding:6px 8px;font-size:10px;text-align:left;border:1px solid #000;color:#ffffff;font-weight:800;">Produto</th>
-            <th style="padding:6px 8px;font-size:10px;text-align:center;border:1px solid #000;width:130px;color:#ffffff;font-weight:800;">Peso / Qtd Real</th>
+          <thead><tr style="background:#1e3a8a;">
+            <th style="padding:6px 6px;font-size:10px;text-align:center;border:1px solid #93c5fd;width:40px;color:#ffffff;font-weight:800;">✓</th>
+            <th style="padding:6px 6px;font-size:10px;text-align:center;border:1px solid #93c5fd;width:50px;color:#ffffff;font-weight:800;">Qtd</th>
+            <th style="padding:6px 8px;font-size:10px;text-align:left;border:1px solid #93c5fd;color:#ffffff;font-weight:800;">Produto</th>
+            <th style="padding:6px 8px;font-size:10px;text-align:center;border:1px solid #93c5fd;width:130px;color:#ffffff;font-weight:800;">Peso / Qtd Real</th>
             ${priceHeaders}
           </tr></thead>
           <tbody>${rowsHtml}</tbody>
