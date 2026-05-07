@@ -272,15 +272,15 @@ export default function Pedidos() {
       <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         /* MODO COLORIDO — tinta preta em falta */
-        body { font-family:'Segoe UI',Arial,sans-serif; padding:20px; color:#000; font-size:9px; }
-        .header { display:flex; align-items:center; gap:14px; border-bottom:3px solid #000; padding-bottom:10px; margin-bottom:12px; }
+        body { font-family:'Segoe UI',Arial,sans-serif; padding:20px; color:#1e3a8a; font-size:9px; }
+        .header { display:flex; align-items:center; gap:14px; border-bottom:3px solid #1e3a8a; padding-bottom:10px; margin-bottom:12px; }
         .header img { width:60px; height:60px; object-fit:contain; }
         .header .brand { flex:1; }
-        .header h1 { font-size:18px; font-weight:800; color:#000; letter-spacing:1.5px; text-transform:uppercase; }
-        .header .company { font-size:10px; color:#000; font-weight:700; margin-top:2px; }
-        .header .meta { font-size:8px; color:#000; margin-top:1px; font-weight:600; }
-        .header .doc-meta { text-align:right; font-size:8px; color:#000; font-weight:700; }
-        .header .doc-meta strong { color:#000; display:block; font-size:9px; }
+        .header h1 { font-size:18px; font-weight:800; color:#1e3a8a; letter-spacing:1.5px; text-transform:uppercase; }
+        .header .company { font-size:10px; color:#1e3a8a; font-weight:700; margin-top:2px; }
+        .header .meta { font-size:8px; color:#1e3a8a; margin-top:1px; font-weight:600; }
+        .header .doc-meta { text-align:right; font-size:8px; color:#1e3a8a; font-weight:700; }
+        .header .doc-meta strong { color:#c0392b; display:block; font-size:9px; }
         .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; font-size:9px; }
         .info-box { background:#fff; border:1px solid #000; border-radius:4px; padding:6px 8px; }
         .info-box label { font-size:7px; text-transform:uppercase; color:#000; font-weight:700; letter-spacing:0.5px; display:block; margin-bottom:1px; }
