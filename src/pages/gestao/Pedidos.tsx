@@ -282,19 +282,19 @@ export default function Pedidos() {
         .header .doc-meta { text-align:right; font-size:8px; color:#1e3a8a; font-weight:700; }
         .header .doc-meta strong { color:#c0392b; display:block; font-size:9px; }
         .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; font-size:9px; }
-        .info-box { background:#fff; border:1px solid #000; border-radius:4px; padding:6px 8px; }
-        .info-box label { font-size:7px; text-transform:uppercase; color:#000; font-weight:700; letter-spacing:0.5px; display:block; margin-bottom:1px; }
-        .info-box span { font-weight:700; color:#000; }
+        .info-box { background:#eff6ff; border:1px solid #93c5fd; border-radius:4px; padding:6px 8px; }
+        .info-box label { font-size:7px; text-transform:uppercase; color:#1e3a8a; font-weight:700; letter-spacing:0.5px; display:block; margin-bottom:1px; }
+        .info-box span { font-weight:700; color:#1e3a8a; }
         .info-box.full { grid-column:1 / -1; }
         table { width:100%; border-collapse:collapse; margin-bottom:12px; }
-        th { background:#000; color:#fff; padding:4px 6px; font-size:8px; text-transform:uppercase; letter-spacing:0.5px; font-weight:700; border:1px solid #000; }
-        td { padding:3px 6px; border:1px solid #000; font-size:8px; color:#000; font-weight:600; }
-        tr:nth-child(even) td { background:#fff; }
-        .sig-section { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:16px; padding-top:10px; border-top:2px solid #000; }
+        th { background:#1e3a8a; color:#fff; padding:4px 6px; font-size:8px; text-transform:uppercase; letter-spacing:0.5px; font-weight:700; border:1px solid #93c5fd; }
+        td { padding:3px 6px; border:1px solid #93c5fd; font-size:8px; color:#1e3a8a; font-weight:600; }
+        tr:nth-child(even) td { background:#eff6ff; }
+        .sig-section { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:16px; padding-top:10px; border-top:2px solid #1e3a8a; }
         .sig-box { text-align:center; }
-        .sig-box p { font-size:8px; color:#000; margin-bottom:30px; font-weight:700; }
-        .sig-line { border-top:1px solid #000; padding-top:3px; font-size:8px; font-weight:700; color:#000; }
-        .footer { text-align:center; margin-top:12px; font-size:7px; color:#000; font-weight:600; border-top:1px solid #000; padding-top:6px; }
+        .sig-box p { font-size:8px; color:#1e3a8a; margin-bottom:30px; font-weight:700; }
+        .sig-line { border-top:1px solid #1e3a8a; padding-top:3px; font-size:8px; font-weight:700; color:#1e3a8a; }
+        .footer { text-align:center; margin-top:12px; font-size:7px; color:#1e3a8a; font-weight:600; border-top:1px solid #93c5fd; padding-top:6px; }
         @media print { body { padding:10px; -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
       </style></head>
       <body>
