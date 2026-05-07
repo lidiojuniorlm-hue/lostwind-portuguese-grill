@@ -271,7 +271,7 @@ export default function Pedidos() {
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Guia de Transporte — ${(order as any).store_name}</title>
       <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        /* MODO COLORIDO TEMPORÁRIO — tinta preta em falta */
+        /* MODO COLORIDO — tinta preta em falta */
         body { font-family:'Segoe UI',Arial,sans-serif; padding:20px; color:#000; font-size:9px; }
         .header { display:flex; align-items:center; gap:14px; border-bottom:3px solid #000; padding-bottom:10px; margin-bottom:12px; }
         .header img { width:60px; height:60px; object-fit:contain; }
