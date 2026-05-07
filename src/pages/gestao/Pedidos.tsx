@@ -530,15 +530,15 @@ export default function Pedidos() {
               <div style="display:flex;justify-content:space-between;width:220px;font-size:15px;font-weight:800;color:#c0392b;background:#eff6ff;padding:4px 8px;border-radius:4px;border:1px solid #93c5fd;"><span>Total (c/ IVA)</span><span>€${financialSummary.total.toFixed(2)}</span></div>
             </div>
           </div>` : ""}
-        ${(order as any).notes ? `<p style="margin-top:6px;font-size:10px;white-space:pre-line;color:#000;"><strong style="color:#000;">Notas:</strong> ${(order as any).notes}</p>` : ""}
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px;padding-top:12px;border-top:2px solid #000;">
+        ${(order as any).notes ? `<p style="margin-top:6px;font-size:10px;white-space:pre-line;color:#1e3a8a;"><strong style="color:#1e3a8a;">Notas:</strong> ${(order as any).notes}</p>` : ""}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px;padding-top:12px;border-top:2px solid #93c5fd;">
           <div style="text-align:center;">
-            <p style="font-size:9px;color:#000;margin-bottom:32px;font-weight:700;">Responsável do Armazém</p>
-            <div style="border-top:1px solid #000;padding-top:4px;font-size:9px;font-weight:700;color:#000;">Assinatura / Carimbo</div>
+            <p style="font-size:9px;color:#1e3a8a;margin-bottom:32px;font-weight:700;">Responsável do Armazém</p>
+            <div style="border-top:1px solid #93c5fd;padding-top:4px;font-size:9px;font-weight:700;color:#1e3a8a;">Assinatura / Carimbo</div>
           </div>
           <div style="text-align:center;">
-            <p style="font-size:9px;color:#000;margin-bottom:32px;font-weight:700;">Motorista / Funcionário de Loja</p>
-            <div style="border-top:1px solid #000;padding-top:4px;font-size:9px;font-weight:700;color:#000;">Assinatura / Carimbo</div>
+            <p style="font-size:9px;color:#1e3a8a;margin-bottom:32px;font-weight:700;">Motorista / Funcionário de Loja</p>
+            <div style="border-top:1px solid #93c5fd;padding-top:4px;font-size:9px;font-weight:700;color:#1e3a8a;">Assinatura / Carimbo</div>
           </div>
         </div>
         <script>window.onload=function(){window.print();}<\/script>
