@@ -522,12 +522,12 @@ export default function Pedidos() {
         <div style="font-size:10.5px;color:#1e3a8a;font-weight:700;margin:0 0 8px 4px;">📝 ${showReadyValues ? "Valores reais digitalizados" : "Qtd real / peso para preenchimento manual"}${(priorityItems[orderId] || []).length > 0 ? ` · <span style="color:#c0392b;font-weight:800;">Itens marcados com 1º entram primeiro na carrinha</span>` : ""}</div>
         ${sectionsHtml}
         ${financialSummary ? `
-          <div style="margin-top:10px;border-top:2px solid #000;padding-top:8px;">
+          <div style="margin-top:10px;border-top:2px solid #93c5fd;padding-top:8px;">
             <div style="display:flex;justify-content:flex-end;margin-bottom:4px;">
-              <div style="display:flex;justify-content:space-between;width:220px;font-size:13px;color:#000;"><span>Subtotal (s/ IVA)</span><span style="font-weight:700;">€${financialSummary.subtotal.toFixed(2)}</span></div>
+              <div style="display:flex;justify-content:space-between;width:220px;font-size:13px;color:#1e3a8a;"><span>Subtotal (s/ IVA)</span><span style="font-weight:700;">€${financialSummary.subtotal.toFixed(2)}</span></div>
             </div>
             <div style="display:flex;justify-content:flex-end;">
-              <div style="display:flex;justify-content:space-between;width:220px;font-size:15px;font-weight:800;color:#000;background:#fff;padding:4px 8px;border-radius:4px;border:1px solid #000;"><span>Total (c/ IVA)</span><span>€${financialSummary.total.toFixed(2)}</span></div>
+              <div style="display:flex;justify-content:space-between;width:220px;font-size:15px;font-weight:800;color:#c0392b;background:#eff6ff;padding:4px 8px;border-radius:4px;border:1px solid #93c5fd;"><span>Total (c/ IVA)</span><span>€${financialSummary.total.toFixed(2)}</span></div>
             </div>
           </div>` : ""}
         ${(order as any).notes ? `<p style="margin-top:6px;font-size:10px;white-space:pre-line;color:#000;"><strong style="color:#000;">Notas:</strong> ${(order as any).notes}</p>` : ""}
