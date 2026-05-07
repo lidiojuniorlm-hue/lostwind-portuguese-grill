@@ -440,12 +440,12 @@ export default function Pedidos() {
           : "";
 
         return `<tr>
-          <td style="padding:6px 8px;border:1px solid #000;text-align:center;width:40px;">
-            <div style="width:16px;height:16px;border:2px solid #000;border-radius:3px;display:inline-block;"></div>
+          <td style="padding:6px 8px;border:1px solid #93c5fd;text-align:center;width:40px;">
+            <div style="width:16px;height:16px;border:2px solid #1e3a8a;border-radius:3px;display:inline-block;"></div>
           </td>
-          <td style="padding:6px 8px;border:1px solid #000;text-align:center;font-size:14px;color:#000;font-weight:900;width:50px;">${qtyValue}</td>
-          <td style="padding:6px 10px;border:1px solid #000;font-size:12.5px;color:#000;font-weight:700;">${orderBadge}${item.product_name}${sectionHint}</td>
-          <td style="padding:6px 10px;border:1px solid #000;text-align:center;font-size:12px;color:#000;">${realQtyContent}</td>
+          <td style="padding:6px 8px;border:1px solid #93c5fd;text-align:center;font-size:14px;color:#1e3a8a;font-weight:900;width:50px;">${qtyValue}</td>
+          <td style="padding:6px 10px;border:1px solid #93c5fd;font-size:12.5px;color:#1e3a8a;font-weight:700;">${orderBadge}${item.product_name}${sectionHint}</td>
+          <td style="padding:6px 10px;border:1px solid #93c5fd;text-align:center;font-size:12px;color:#1e3a8a;">${realQtyContent}</td>
           ${priceCol}
         </tr>`;
       }).join("");
