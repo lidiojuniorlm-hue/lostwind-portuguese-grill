@@ -503,23 +503,23 @@ export default function Pedidos() {
         body { font-family:'Arial','Helvetica Neue',sans-serif; padding:12px 16px; color:#1e3a8a; font-size:12px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       </style></head>
       <body>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#000;font-weight:700;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#1e3a8a;font-weight:700;margin-bottom:12px;">
           <div>${printedAt.toLocaleDateString("pt-PT")} ${printedAt.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</div>
           <div>Pedido ${(order as any).store_name}</div>
         </div>
         <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:6px;">
           <img src="${logoBase64}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
           <div style="text-align:center;">
-            <div style="font-size:18px;font-weight:800;color:#000;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;">Lost Wind Churrasqueira</div>
-            <div style="font-size:11px;color:#000;font-weight:700;margin-top:2px;text-transform:uppercase;letter-spacing:1px;">Pedido de Stock</div>
+            <div style="font-size:18px;font-weight:800;color:#1e3a8a;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;">Lost Wind Churrasqueira</div>
+            <div style="font-size:11px;color:#1e3a8a;font-weight:700;margin-top:2px;text-transform:uppercase;letter-spacing:1px;">Pedido de Stock</div>
           </div>
         </div>
-        <div style="text-align:center;margin:8px 0 12px;padding:10px 14px;background:linear-gradient(90deg,#fff 0%,#fff 50%,#fff 100%);border-top:2px solid #000;border-bottom:2px solid #000;">
-          <div style="font-size:10px;color:#000;text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:2px;">Loja de Destino</div>
-          <div style="font-size:26px;font-weight:900;color:#000;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;line-height:1.1;">${(order as any).store_name}</div>
+        <div style="text-align:center;margin:8px 0 12px;padding:10px 14px;background:linear-gradient(90deg,#eff6ff 0%,#ffffff 50%,#eff6ff 100%);border-top:2px solid #1e3a8a;border-bottom:2px solid #1e3a8a;">
+          <div style="font-size:10px;color:#1e3a8a;text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:2px;">Loja de Destino</div>
+          <div style="font-size:26px;font-weight:900;color:#c0392b;letter-spacing:0.5px;font-family:'Arial Black','Arial',sans-serif;line-height:1.1;">${(order as any).store_name}</div>
         </div>
-        <div style="text-align:center;font-size:11px;color:#000;font-weight:700;margin-bottom:10px;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })} às ${new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} · Estado: ${ORDER_STATUS_LABELS[(order as any).status as OrderStatus]}</div>
-        <div style="font-size:10.5px;color:#000;font-weight:700;margin:0 0 8px 4px;">📝 ${showReadyValues ? "Valores reais digitalizados" : "Qtd real / peso para preenchimento manual"}${(priorityItems[orderId] || []).length > 0 ? ` · <span style="color:#000;font-weight:800;">Itens marcados com 1º entram primeiro na carrinha</span>` : ""}</div>
+        <div style="text-align:center;font-size:11px;color:#1e3a8a;font-weight:700;margin-bottom:10px;">${new Date((order as any).created_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })} às ${new Date((order as any).created_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} · Estado: ${ORDER_STATUS_LABELS[(order as any).status as OrderStatus]}</div>
+        <div style="font-size:10.5px;color:#1e3a8a;font-weight:700;margin:0 0 8px 4px;">📝 ${showReadyValues ? "Valores reais digitalizados" : "Qtd real / peso para preenchimento manual"}${(priorityItems[orderId] || []).length > 0 ? ` · <span style="color:#c0392b;font-weight:800;">Itens marcados com 1º entram primeiro na carrinha</span>` : ""}</div>
         ${sectionsHtml}
         ${financialSummary ? `
           <div style="margin-top:10px;border-top:2px solid #000;padding-top:8px;">
