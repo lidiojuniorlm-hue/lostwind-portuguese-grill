@@ -321,7 +321,7 @@ export default function Pedidos() {
         <table>
           <thead><tr><th style="text-align:left;">Produto</th><th style="text-align:center;">Qtd</th><th style="text-align:center;">Unidade</th><th style="text-align:center;">Secção</th></tr></thead>
           <tbody>${items.map((item: any) => `<tr><td>${item.product_name}</td><td style="text-align:center;">${item.actual_qty ?? item.qty}</td><td style="text-align:center;">${item.unit}</td><td style="text-align:center;">${item.section}</td></tr>`).join("")}
-          <tr style="background:#fff;font-weight:800;color:#000;"><td style="color:#000;">TOTAL</td><td style="text-align:center;color:#000;">${totalItems}</td><td colspan="2"></td></tr>
+          <tr style="background:#eff6ff;font-weight:800;color:#c0392b;"><td style="color:#c0392b;">TOTAL</td><td style="text-align:center;color:#c0392b;">${totalItems}</td><td colspan="2"></td></tr>
           </tbody>
         </table>
         ${(order as any).notes ? `<p style="font-size:8px;margin-bottom:8px;"><strong>Observações:</strong> ${(order as any).notes?.replace(/\n/g, "<br/>")}</p>` : ""}
