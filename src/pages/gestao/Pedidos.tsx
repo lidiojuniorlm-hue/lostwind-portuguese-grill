@@ -488,8 +488,8 @@ export default function Pedidos() {
       <style>
         @page { size:A4; margin:8mm; }
         * { margin:0; padding:0; box-sizing:border-box; }
-        /* MODO COLORIDO TEMPORÁRIO — tinta preta em falta */
-        body { font-family:'Arial','Helvetica Neue',sans-serif; padding:12px 16px; color:#000; font-size:12px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        /* MODO COLORIDO — tinta preta em falta */
+        body { font-family:'Arial','Helvetica Neue',sans-serif; padding:12px 16px; color:#1e3a8a; font-size:12px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       </style></head>
       <body>
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#000;font-weight:700;margin-bottom:12px;">
