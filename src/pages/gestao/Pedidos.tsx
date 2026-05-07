@@ -470,18 +470,29 @@ export default function Pedidos() {
         </table>
       </div>`;
 
+    const sectionColors: Record<string, { accent: string; bg: string }> = {
+      "Charcoal": { accent: "#1e3a8a", bg: "#eff6ff" },
+      "Carnes": { accent: "#c0392b", bg: "#fef2f2" },
+      "Pizzas": { accent: "#d97706", bg: "#fffbeb" },
+      "Bebidas": { accent: "#15803d", bg: "#dcfce7" },
+      "Taberna": { accent: "#7c3aed", bg: "#f3e8ff" },
+      "Loja Vila Franca": { accent: "#0891b2", bg: "#ecfeff" },
+      "Loja Cartaxo": { accent: "#be123c", bg: "#fff1f2" },
+    };
+
     const priorityBlock = priorityItemsOrdered.length > 0
       ? buildSectionBlock(
           `🚛 Primeiros a entrar na carrinha (${priorityItemsOrdered.length})`,
           buildRows(priorityItemsOrdered, true),
-          "#000",
-          "#fff",
+          "#c0392b",
+          "#fef2f2",
         )
       : "";
 
     const sectionsHtml = priorityBlock + SECTIONS.filter((s) => items.some((i: any) => i.section === s && !prioritySet.has(i.id))).map((section) => {
       const sectionItems = items.filter((i: any) => i.section === section && !prioritySet.has(i.id));
-      return buildSectionBlock(section, buildRows(sectionItems, false), "#000", "#fff");
+      const colors = sectionColors[section] || { accent: "#1e3a8a", bg: "#eff6ff" };
+      return buildSectionBlock(section, buildRows(sectionItems, false), colors.accent, colors.bg);
     }).join("");
 
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Pedido ${(order as any).store_name}</title>
