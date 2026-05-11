@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOrders, useOrderMutations, useUsers, useLogActivity, useDeleteOrder, useProducts, useStores } from "@/hooks/useSupabaseData";
+import { useOrders, useOrderMutations, useUsers, useLogActivity, useDeleteOrder, useProducts, useStores, useInventoryMutations } from "@/hooks/useSupabaseData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,7 @@ export default function Pedidos() {
   const { data: products = [] } = useProducts();
   const { data: stores = [] } = useStores();
   const { updateOrderStatus, updateOrderItems, addOrderItems, deleteOrderItem } = useOrderMutations();
+  const { adjustStock } = useInventoryMutations();
   const deleteOrder = useDeleteOrder();
   const logActivity = useLogActivity();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
@@ -114,8 +115,9 @@ export default function Pedidos() {
   );
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    const order = orders.find((o: any) => o.id === orderId);
+    const previousStatus = (order as any)?.status;
     if (newStatus === "em_preparacao") {
-      const order = orders.find((o: any) => o.id === orderId);
       if (order) {
         const items = (order as any).items || [];
         const autoFillItems = items.map((i: any) => ({
@@ -125,6 +127,26 @@ export default function Pedidos() {
           actual_vat: i.actual_vat ?? Number(i.vat_rate),
         }));
         await updateOrderItems.mutateAsync({ items: autoFillItems });
+      }
+    }
+    // Auto-decrement central warehouse stock when order is marked ready.
+    // Only fire on transition INTO "pronto" to avoid double deduction.
+    if (newStatus === "pronto" && previousStatus !== "pronto" && order) {
+      const items = (order as any).items || [];
+      try {
+        for (const it of items) {
+          const qty = Number(it.actual_qty ?? it.qty) || 0;
+          if (qty > 0 && it.product_id) {
+            await adjustStock.mutateAsync({
+              product_id: it.product_id,
+              store_name: "Armazém",
+              delta: -qty,
+            });
+          }
+        }
+        toast.success("Stock do armazém atualizado");
+      } catch (e) {
+        toast.error("Falha ao atualizar stock do armazém");
       }
     }
     await updateOrderStatus.mutateAsync({ orderId, status: newStatus });
