@@ -21,6 +21,7 @@ import Configuracoes from "./pages/gestao/Configuracoes.tsx";
 import Atividade from "./pages/gestao/Atividade.tsx";
 import Validades from "./pages/gestao/Validades.tsx";
 import Lojas from "./pages/gestao/Lojas.tsx";
+import Contagem from "./pages/gestao/Contagem.tsx";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="atividade" element={<Atividade />} />
               <Route path="validades" element={<Validades />} />
               <Route path="lojas" element={<Lojas />} />
+              <Route path="contagem" element={<Contagem />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

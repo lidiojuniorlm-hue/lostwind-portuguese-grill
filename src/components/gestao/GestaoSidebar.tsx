@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, ClipboardList, Package, Users, LogOut, BarChart3, Warehouse, Euro, Truck, Settings, Clock, ShieldCheck, Store } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, ClipboardList, Package, Users, LogOut, BarChart3, Warehouse, Euro, Truck, Settings, Clock, ShieldCheck, Store, ListChecks } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -45,6 +45,7 @@ export function GestaoSidebar() {
     { title: "Painel", url: "/gestao", icon: LayoutDashboard, roles: ["admin", "armazem", "funcionario"], badge: null as number | null },
     { title: "Novo Pedido", url: "/gestao/novo-pedido", icon: ShoppingCart, roles: ["funcionario"], badge: null },
     { title: "Pedidos", url: "/gestao/pedidos", icon: ClipboardList, roles: ["admin", "armazem", "funcionario"], badge: badgeCount || null },
+    { title: "Contagem", url: "/gestao/contagem", icon: ListChecks, roles: ["admin", "armazem"], badge: null },
     { title: "Atividade", url: "/gestao/atividade", icon: Clock, roles: ["admin", "armazem"], badge: null },
   ].filter((item) => item.roles.includes(user.role));
 
