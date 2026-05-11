@@ -51,7 +51,34 @@ export function useInventoryMutations() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["inventory"] }),
   });
-  return { upsertInventory };
+  // Decrement (or increment if delta positive) stock for a product at a store.
+  // Reads current value, applies delta, never goes below 0.
+  const adjustStock = useMutation({
+    mutationFn: async ({ product_id, store_name, delta }: { product_id: string; store_name: string; delta: number }) => {
+      const { data: existing, error: readErr } = await supabase
+        .from("inventory")
+        .select("current_stock")
+        .eq("product_id", product_id)
+        .eq("store_name", store_name)
+        .maybeSingle();
+      if (readErr) throw readErr;
+      const current = Number(existing?.current_stock ?? 0);
+      const next = Math.max(0, current + delta);
+      const { error } = await supabase
+        .from("inventory")
+        .upsert({
+          product_id,
+          store_name,
+          current_stock: next,
+          min_stock: 0,
+          max_stock: 0,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "product_id,store_name" });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["inventory"] }),
+  });
+  return { upsertInventory, adjustStock };
 }
 
 export function useProductMutations() {
