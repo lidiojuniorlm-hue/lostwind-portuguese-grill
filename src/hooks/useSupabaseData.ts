@@ -254,7 +254,7 @@ export function useOrderMutations() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });
 
-  return { createOrder, updateOrderStatus, updateOrderItems, addOrderItems, deleteOrderItem };
+  return { createOrder, updateOrderStatus, updateOrderNotes, updateOrderItems, addOrderItems, deleteOrderItem };
 }
 
 // ─── Suppliers ───
