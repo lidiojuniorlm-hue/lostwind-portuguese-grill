@@ -200,6 +200,17 @@ export function useOrderMutations() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });
 
+  const updateOrderNotes = useMutation({
+    mutationFn: async ({ orderId, notes }: { orderId: string; notes: string | null }) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({ notes: notes, updated_at: new Date().toISOString() })
+        .eq("id", orderId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
+  });
+
   const updateOrderItems = useMutation({
     mutationFn: async ({
       items,
