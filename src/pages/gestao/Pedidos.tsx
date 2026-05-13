@@ -204,6 +204,29 @@ export default function Pedidos() {
     toast.success("Valores atualizados com sucesso!");
   };
 
+  const startEditingNotes = (orderId: string, currentNotes: string | null) => {
+    setEditingNotesOrderId(orderId);
+    setEditingNotesText(currentNotes || "");
+  };
+
+  const saveNotes = async (orderId: string) => {
+    await updateOrderNotes.mutateAsync({ orderId, notes: editingNotesText.trim() || null });
+    setEditingNotesOrderId(null);
+    setEditingNotesText("");
+    logActivity.mutate({
+      user_id: user.id,
+      user_name: user.name,
+      action: "Observações de pedido atualizadas",
+      details: `Pedido ${orderId.slice(0, 8)}`,
+    });
+    toast.success("Observações atualizadas!");
+  };
+
+  const cancelEditingNotes = () => {
+    setEditingNotesOrderId(null);
+    setEditingNotesText("");
+  };
+
   // Admin: add new items to an existing order
   const openAddItem = (orderId: string) => {
     setAddItemOrderId(orderId);
