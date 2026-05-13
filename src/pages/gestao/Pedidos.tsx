@@ -48,7 +48,7 @@ export default function Pedidos() {
   const { data: users = [] } = useUsers();
   const { data: products = [] } = useProducts();
   const { data: stores = [] } = useStores();
-  const { updateOrderStatus, updateOrderItems, addOrderItems, deleteOrderItem } = useOrderMutations();
+  const { updateOrderStatus, updateOrderItems, addOrderItems, deleteOrderItem, updateOrderNotes } = useOrderMutations();
   const { adjustStock } = useInventoryMutations();
   const deleteOrder = useDeleteOrder();
   const logActivity = useLogActivity();
@@ -60,6 +60,8 @@ export default function Pedidos() {
   const [addItemOrderId, setAddItemOrderId] = useState<string | null>(null);
   const [addItemSearch, setAddItemSearch] = useState("");
   const [addItemSelections, setAddItemSelections] = useState<Record<string, number>>({});
+  const [editingNotesOrderId, setEditingNotesOrderId] = useState<string | null>(null);
+  const [editingNotesText, setEditingNotesText] = useState("");
   // Per-order ordered list of item IDs marked as priority (first loaded into the van).
   // We keep them in selection order so the user controls the loading sequence.
   const [priorityItems, setPriorityItems] = useState<Record<string, string[]>>({});
@@ -200,6 +202,29 @@ export default function Pedidos() {
     });
     setEditingItems((prev) => { const n = { ...prev }; delete n[orderId]; return n; });
     toast.success("Valores atualizados com sucesso!");
+  };
+
+  const startEditingNotes = (orderId: string, currentNotes: string | null) => {
+    setEditingNotesOrderId(orderId);
+    setEditingNotesText(currentNotes || "");
+  };
+
+  const saveNotes = async (orderId: string) => {
+    await updateOrderNotes.mutateAsync({ orderId, notes: editingNotesText.trim() || null });
+    setEditingNotesOrderId(null);
+    setEditingNotesText("");
+    logActivity.mutate({
+      user_id: user.id,
+      user_name: user.name,
+      action: "Observações de pedido atualizadas",
+      details: `Pedido ${orderId.slice(0, 8)}`,
+    });
+    toast.success("Observações atualizadas!");
+  };
+
+  const cancelEditingNotes = () => {
+    setEditingNotesOrderId(null);
+    setEditingNotesText("");
   };
 
   // Admin: add new items to an existing order
@@ -673,7 +698,34 @@ export default function Pedidos() {
 
                   {expanded && (
                     <div className="mt-4 space-y-4">
-                      {order.notes && <p className="text-xs text-muted-foreground bg-secondary/50 rounded-lg p-2 whitespace-pre-line">📝 {order.notes}</p>}
+                      {editingNotesOrderId === order.id ? (
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-foreground">Observações do pedido</label>
+                          <textarea
+                            className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            value={editingNotesText}
+                            onChange={(e) => setEditingNotesText(e.target.value)}
+                            placeholder="Escreva as observações..."
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveNotes(order.id)} className="text-xs bg-primary text-primary-foreground">
+                              <Save className="w-3 h-3 mr-1" /> Guardar
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditingNotes} className="text-xs">
+                              Cancelar
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {order.notes && <p className="text-xs text-muted-foreground bg-secondary/50 rounded-lg p-2 whitespace-pre-line">📝 {order.notes}</p>}
+                          {user.role === "admin" && (
+                            <Button size="sm" variant="outline" onClick={() => startEditingNotes(order.id, order.notes)} className="text-xs">
+                              ✏️ Editar Observações
+                            </Button>
+                          )}
+                        </>
+                      )}
 
                       <div className="flex flex-wrap gap-2">
                         {canEditActuals(order.status) && !isEditing && (
