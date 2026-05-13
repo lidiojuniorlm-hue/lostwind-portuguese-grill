@@ -60,6 +60,8 @@ export default function Pedidos() {
   const [addItemOrderId, setAddItemOrderId] = useState<string | null>(null);
   const [addItemSearch, setAddItemSearch] = useState("");
   const [addItemSelections, setAddItemSelections] = useState<Record<string, number>>({});
+  const [editingNotesOrderId, setEditingNotesOrderId] = useState<string | null>(null);
+  const [editingNotesText, setEditingNotesText] = useState("");
   // Per-order ordered list of item IDs marked as priority (first loaded into the van).
   // We keep them in selection order so the user controls the loading sequence.
   const [priorityItems, setPriorityItems] = useState<Record<string, string[]>>({});
