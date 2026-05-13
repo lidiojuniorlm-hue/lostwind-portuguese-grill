@@ -48,7 +48,7 @@ export default function Pedidos() {
   const { data: users = [] } = useUsers();
   const { data: products = [] } = useProducts();
   const { data: stores = [] } = useStores();
-  const { updateOrderStatus, updateOrderItems, addOrderItems, deleteOrderItem } = useOrderMutations();
+  const { updateOrderStatus, updateOrderItems, addOrderItems, deleteOrderItem, updateOrderNotes } = useOrderMutations();
   const { adjustStock } = useInventoryMutations();
   const deleteOrder = useDeleteOrder();
   const logActivity = useLogActivity();
